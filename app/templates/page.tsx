@@ -104,62 +104,50 @@ export default function TemplatesPage() {
   return (
     <div className="min-h-screen">
       {/* Header */}
-      <header className="bg-gradient-primary text-white p-4 safe-top relative overflow-hidden rounded-b-3xl mb-4 mx-[-16px] mt-[-16px]">
-        <div className="relative z-10 px-2">
-          <h1 className="text-xl font-bold font-display">📋 Workout Templates</h1>
-          <p className="text-white/90 mt-1 text-sm">Design your perfect workout routines</p>
-        </div>
-        {/* Decorative elements */}
-        <div className="absolute top-0 right-0 w-20 h-20 bg-white/10 rounded-full -translate-y-6 translate-x-6 pointer-events-none"></div>
-      </header>
+      <div className="pt-12 pb-8">
+        <h1 className="text-2xl font-bold text-black">Workout Templates</h1>
+        <p className="text-gray-500 text-sm mt-1">Create and manage your workout routines</p>
+      </div>
 
       {/* Main Content */}
       <main className="space-y-6">
         {/* Create Button */}
         <Button 
           onClick={() => setShowCreateModal(true)}
-          className="w-full text-xl"
+          className="w-full"
           size="lg"
         >
-          <span className="text-2xl">✨</span>
           Create New Template
         </Button>
 
         {/* Templates List */}
         <div>
-          <h2 className="text-lg font-bold text-gray-800 mb-4 flex items-center gap-2 font-display">
-            🗂️ Your Templates
-          </h2>
-          <div className="space-y-4">
+          <h2 className="text-lg font-bold text-black mb-4">Your Templates</h2>
+          <div className="space-y-3">
             {templates.length > 0 ? (
               templates.map((template) => {
                 const muscleGroupInfo = template.muscleGroup === 'full_body' 
-                  ? { label: 'Full Body', emoji: '🏋️', color: '#667eea' }
+                  ? { label: 'Full Body', emoji: '🏋️', color: '#7c3aed' }
                   : MUSCLE_GROUPS[template.muscleGroup];
                 
                 const dayInfo = WEEK_DAYS.find(d => d.value === template.day);
                 
                 return (
-                  <Card
-                    key={template.id} 
-                    className="relative overflow-hidden transform hover:scale-[1.02] hover:-translate-y-1 transition-all duration-200 border-l-4"
-                    style={{ borderLeftColor: muscleGroupInfo.color }}
-                  >
+                  <Card key={template.id} className="relative">
                     <div className="flex justify-between items-start">
                       <div className="flex-1">
-                        <div className="flex items-center gap-4 mb-4">
+                        <div className="flex items-center gap-3 mb-3">
                           <div 
-                            className="w-14 h-14 rounded-2xl flex items-center justify-center text-white font-bold shadow-md text-2xl"
+                            className="w-10 h-10 rounded-lg flex items-center justify-center text-white font-bold text-lg"
                             style={{ backgroundColor: muscleGroupInfo.color }}
                           >
                             {muscleGroupInfo.emoji}
                           </div>
                           <div>
-                            <h3 className="text-xl font-bold text-gray-800 font-display">
+                            <h3 className="text-base font-bold text-black">
                               {template.name}
                             </h3>
-                            <p className="text-sm text-gray-600 flex items-center gap-2 font-medium">
-                              <span className="text-lg">📅</span>
+                            <p className="text-sm text-gray-500 flex items-center gap-2">
                               <span>{dayInfo?.label}</span>
                               <span>•</span>
                               <span>{template.exercises.length} exercises</span>
@@ -167,84 +155,68 @@ export default function TemplatesPage() {
                           </div>
                         </div>
                         
-                        <div className="bg-gradient-to-br from-gray-50 to-gray-100/50 rounded-2xl p-4 space-y-3">
-                          <div className="flex items-center gap-3 flex-wrap">
+                        <div className="bg-gray-50 rounded-lg p-3 space-y-2">
+                          <div className="flex items-center gap-2 flex-wrap">
                             <button
                               onClick={() => toggleTemplateActive(template)}
-                              className={`px-4 py-2 rounded-xl text-sm font-bold flex items-center gap-2 shadow-md transition-all duration-200 ${
+                              className={`px-3 py-1 rounded-full text-xs font-semibold transition-all duration-200 ${
                                 template.isActive 
-                                  ? 'bg-gradient-success text-white' 
+                                  ? 'bg-green-100 text-green-700' 
                                   : 'bg-gray-200 text-gray-600 hover:bg-gray-300'
                               }`}
                             >
-                              <span className={`w-2 h-2 rounded-full ${template.isActive ? 'bg-white animate-pulse' : 'bg-gray-400'}`}></span>
                               {template.isActive ? 'Active' : 'Inactive'}
                             </button>
                             <div 
-                              className="px-4 py-2 rounded-xl text-sm font-bold text-white shadow-md"
+                              className="px-3 py-1 rounded-full text-xs font-semibold text-white"
                               style={{ backgroundColor: muscleGroupInfo.color }}
                             >
                               {muscleGroupInfo.label}
                             </div>
                           </div>
                           
-                          <div className="flex items-center gap-2 text-gray-600">
-                            <span className="text-sm">📅</span>
-                            <span className="text-sm font-medium">
-                              Last used: {template.lastUsed ? formatDate(new Date(template.lastUsed), 'MMM d') : 'Never'}
-                            </span>
+                          <div className="flex items-center gap-2 text-gray-500">
+                            <span className="text-xs">Last used: {template.lastUsed ? formatDate(new Date(template.lastUsed), 'MMM d') : 'Never'}</span>
                           </div>
                         </div>
                       </div>
                       
-                      <div className="flex gap-2 relative z-10">
+                      <div className="flex gap-2 ml-3">
                         <Button
                           variant="glass"
                           size="sm"
                           onClick={() => handleEditTemplate(template)}
-                          className="shrink-0"
                         >
-                          ✏️ Edit
+                          Edit
                         </Button>
                         <Button
                           variant="danger"
                           size="sm"
                           onClick={() => handleDeleteTemplate(template.id)}
-                          className="shrink-0"
                         >
-                          🗑️
+                          Delete
                         </Button>
                       </div>
                     </div>
-                    
-                    {/* Subtle background gradient */}
-                    <div 
-                      className="absolute top-0 right-0 w-24 h-24 opacity-5 rounded-full -translate-y-6 translate-x-6 pointer-events-none"
-                      style={{ backgroundColor: muscleGroupInfo.color }}
-                    ></div>
                   </Card>
                 );
               })
             ) : (
-              <Card className="text-center space-y-6 py-12">
-                <div className="text-8xl opacity-50">📝</div>
-                <div>
-                  <h3 className="text-2xl font-bold text-gray-800 mb-3 font-display">No Templates Yet</h3>
-                  <p className="text-lg text-gray-600 mb-6">Create your first workout template to get started!</p>
-                  <Button 
-                    onClick={() => setShowCreateModal(true)}
-                    size="lg"
-                    className="text-lg"
-                  >
-                    ✨ Get Started
-                  </Button>
-                </div>
+              <Card className="text-center py-8">
+                <div className="text-4xl mb-4">📝</div>
+                <h3 className="text-lg font-bold text-black mb-2">No Templates Yet</h3>
+                <p className="text-gray-600 text-sm mb-4">Create your first workout template to get started!</p>
+                <Button 
+                  onClick={() => setShowCreateModal(true)}
+                  size="md"
+                >
+                  Get Started
+                </Button>
               </Card>
             )}
           </div>
         </div>
       </main>
-
 
       {/* Create/Edit Template Modal */}
       <Modal

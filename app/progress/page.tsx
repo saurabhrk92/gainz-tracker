@@ -62,28 +62,24 @@ export default function ProgressPage() {
   }
 
   return (
-    <div className="flex flex-col min-h-screen bg-gray-50">
+    <div className="min-h-screen">
       {/* Header */}
-      <header className="bg-gradient-primary text-white p-4 safe-top relative overflow-hidden rounded-b-3xl mb-4 mx-[-16px] mt-[-16px]">
-        <div className="relative z-10 px-2">
-          <h1 className="text-xl font-bold font-display">📊 Progress Analytics</h1>
-          <p className="text-white/90 mt-1 text-sm">Track your fitness journey</p>
-        </div>
-        {/* Decorative elements */}
-        <div className="absolute top-0 right-0 w-20 h-20 bg-white/10 rounded-full -translate-y-6 translate-x-6 pointer-events-none"></div>
-      </header>
+      <div className="pt-12 pb-8">
+        <h1 className="text-2xl font-bold text-black">Progress Analytics</h1>
+        <p className="text-gray-500 text-sm mt-1">Track your fitness journey</p>
+      </div>
 
       {/* Time Range Selector */}
-      <div>
-        <div className="flex gap-2 bg-white/95 backdrop-blur-md rounded-3xl p-3 shadow-lg border border-white/20">
+      <div className="mb-6">
+        <div className="flex gap-2 bg-gray-100 rounded-lg p-1">
           {(['week', 'month', 'year'] as const).map((range) => (
             <button
               key={range}
               onClick={() => setTimeRange(range)}
-              className={`flex-1 py-3 px-4 rounded-2xl font-semibold transition-all duration-200 transform hover:scale-105 min-h-[44px] ${
+              className={`flex-1 py-2 px-3 rounded-md font-medium transition-all duration-200 text-sm ${
                 timeRange === range
-                  ? 'bg-gradient-primary text-white shadow-lg'
-                  : 'text-gray-600 hover:bg-gray-50'
+                  ? 'bg-white text-black shadow-sm'
+                  : 'text-gray-600 hover:text-black'
               }`}
             >
               {range.charAt(0).toUpperCase() + range.slice(1)}
@@ -93,87 +89,71 @@ export default function ProgressPage() {
       </div>
 
       {/* Main Content */}
-      <main className="flex-1 space-y-6">
+      <main className="space-y-6">
         {/* Stats Grid */}
         <StatsGrid workouts={workouts} exercises={exercises} />
 
         {/* Charts */}
         <div className="space-y-6">
           {/* Volume Chart */}
-          <Card className="relative overflow-hidden transform hover:scale-[1.01] transition-all duration-200">
-            <h2 className="text-2xl font-bold text-gray-800 mb-6 flex items-center gap-2 font-display">
-              📈 Volume Trends
-            </h2>
+          <Card>
+            <h2 className="text-lg font-bold text-black mb-4">Volume Trends</h2>
             <VolumeChart workouts={workouts} timeRange={timeRange} />
-            <div className="absolute top-0 right-0 w-16 h-16 bg-gradient-primary opacity-5 rounded-full -translate-y-4 translate-x-4"></div>
           </Card>
 
           {/* Strength Progress */}
-          <Card className="relative overflow-hidden transform hover:scale-[1.01] transition-all duration-200">
-            <h2 className="text-2xl font-bold text-gray-800 mb-6 flex items-center gap-2 font-display">
-              💪 Strength Progress
-            </h2>
+          <Card>
+            <h2 className="text-lg font-bold text-black mb-4">Strength Progress</h2>
             <StrengthChart workouts={workouts} exercises={exercises} />
-            <div className="absolute top-0 right-0 w-16 h-16 bg-gradient-secondary opacity-5 rounded-full -translate-y-4 translate-x-4"></div>
           </Card>
 
           {/* Muscle Group Distribution */}
-          <Card className="relative overflow-hidden transform hover:scale-[1.01] transition-all duration-200">
-            <h2 className="text-2xl font-bold text-gray-800 mb-6 flex items-center gap-2 font-display">
-              🎯 Muscle Group Focus
-            </h2>
+          <Card>
+            <h2 className="text-lg font-bold text-black mb-4">Muscle Group Focus</h2>
             <MuscleGroupChart workouts={workouts} exercises={exercises} />
-            <div className="absolute top-0 right-0 w-16 h-16 bg-gradient-accent opacity-5 rounded-full -translate-y-4 translate-x-4"></div>
           </Card>
 
           {/* Workout Frequency */}
-          <Card className="relative overflow-hidden transform hover:scale-[1.01] transition-all duration-200">
-            <h2 className="text-2xl font-bold text-gray-800 mb-6 flex items-center gap-2 font-display">
-              📅 Workout Frequency
-            </h2>
+          <Card>
+            <h2 className="text-lg font-bold text-black mb-4">Workout Frequency</h2>
             <WorkoutFrequencyChart workouts={workouts} timeRange={timeRange} />
-            <div className="absolute top-0 right-0 w-16 h-16 bg-gradient-success opacity-5 rounded-full -translate-y-4 translate-x-4"></div>
           </Card>
         </div>
 
         {/* Recent PRs */}
-        <Card className="relative overflow-hidden transform hover:scale-[1.01] transition-all duration-200">
-          <h2 className="text-2xl font-bold text-gray-800 mb-6 flex items-center gap-2 font-display">
-            🏆 Recent Personal Records
-          </h2>
-          <div className="space-y-4">
+        <Card>
+          <h2 className="text-lg font-bold text-black mb-4">Recent Personal Records</h2>
+          <div className="space-y-3">
             {workouts.slice(0, 5).map((workout, index) => (
-              <div key={workout.id} className="bg-gradient-to-r from-yellow-50 via-orange-50 to-pink-50 border border-orange-200/50 rounded-2xl p-5 shadow-sm hover:shadow-md transition-all duration-200 transform hover:scale-[1.02]">
+              <div key={workout.id} className="bg-gray-50 rounded-lg p-4">
                 <div className="flex justify-between items-center">
-                  <div className="flex items-center gap-4">
-                    <div className="w-12 h-12 bg-gradient-warm rounded-2xl flex items-center justify-center text-white font-bold shadow-md">
-                      #{index + 1}
+                  <div className="flex items-center gap-3">
+                    <div className="w-10 h-10 bg-purple-100 rounded-lg flex items-center justify-center">
+                      <span className="text-purple-600 font-bold text-sm">#{index + 1}</span>
                     </div>
                     <div>
-                      <p className="font-bold text-gray-800 text-lg">
+                      <p className="font-semibold text-black">
                         {formatDate(new Date(workout.date), 'MMM d, yyyy')}
                       </p>
-                      <p className="text-sm text-gray-600 font-medium">
+                      <p className="text-sm text-gray-600">
                         {workout.exercises.length} exercises completed
                       </p>
                     </div>
                   </div>
-                  <div className="text-3xl">🎉</div>
+                  <div className="text-2xl">🎉</div>
                 </div>
               </div>
             ))}
             {workouts.length === 0 && (
-              <div className="text-center py-12 text-gray-500">
-                <div className="text-8xl mb-4 opacity-50">🎯</div>
-                <h3 className="text-xl font-bold text-gray-800 mb-2 font-display">No workouts completed yet</h3>
-                <p className="text-lg text-gray-600">Start tracking to see your progress!</p>
+              <div className="text-center py-8">
+                <div className="text-4xl mb-4">🎯</div>
+                <h3 className="text-lg font-bold text-black mb-2">No workouts completed yet</h3>
+                <p className="text-gray-600 text-sm">Start tracking to see your progress!</p>
               </div>
             )}
           </div>
-          <div className="absolute top-0 right-0 w-16 h-16 bg-gradient-warm opacity-5 rounded-full -translate-y-4 translate-x-4"></div>
         </Card>
       </main>
-
     </div>
   );
 }

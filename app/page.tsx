@@ -85,173 +85,152 @@ export default function HomePage() {
   return (
     <div className="min-h-screen">
       {/* Header */}
-      <header className="bg-gradient-primary text-white p-4 safe-top relative overflow-hidden rounded-b-3xl mb-4 mx-[-16px] mt-[-16px]">
-        <div className="relative z-10 px-2">
-          <div className="flex justify-between items-start">
-            <div>
-              <h1 className="text-xl font-bold font-display">🏋️ Gainz Tracker</h1>
-              <p className="text-white/90 mt-1 text-sm">{greeting}! Ready to crush it?</p>
-              <p className="text-white/70 text-sm mt-1">{formatDate(today, 'EEEE, MMM d')}</p>
-            </div>
-            
-            {/* Sync Status */}
-            {isAuthenticated && (
-              <div className="flex items-center gap-2 bg-white/10 rounded-full px-3 py-1">
-                <div className={`w-2 h-2 rounded-full ${
-                  syncStatus === 'syncing' ? 'bg-yellow-400 animate-pulse' :
-                  syncStatus === 'success' ? 'bg-green-400' :
-                  syncStatus === 'error' ? 'bg-red-400' : 'bg-gray-400'
-                }`} />
-                <span className="text-xs text-white/80">
-                  {syncStatus === 'syncing' ? 'Syncing...' : 
-                   syncStatus === 'success' ? 'Synced' :
-                   syncStatus === 'error' ? 'Sync Error' : 'Offline'}
-                </span>
-              </div>
-            )}
+      <div className="pt-12 pb-8">
+        <div className="flex justify-between items-start mb-1">
+          <div>
+            <h1 className="text-2xl font-bold text-black">Gainz Tracker</h1>
+            <p className="text-gray-500 text-sm mt-1">{greeting}, ready to train?</p>
           </div>
+          
+          {/* Sync Status */}
+          {isAuthenticated && (
+            <div className="flex items-center gap-2 bg-gray-100 rounded-full px-3 py-1">
+              <div className={`w-2 h-2 rounded-full ${
+                syncStatus === 'syncing' ? 'bg-yellow-400 animate-pulse' :
+                syncStatus === 'success' ? 'bg-green-400' :
+                syncStatus === 'error' ? 'bg-red-400' : 'bg-gray-400'
+              }`} />
+              <span className="text-xs text-gray-600 font-medium">
+                {syncStatus === 'syncing' ? 'Syncing...' : 
+                 syncStatus === 'success' ? 'Synced' :
+                 syncStatus === 'error' ? 'Sync Error' : 'Offline'}
+              </span>
+            </div>
+          )}
         </div>
-        {/* Decorative background elements */}
-        <div className="absolute top-0 right-0 w-20 h-20 bg-white/10 rounded-full -translate-y-6 translate-x-6 pointer-events-none"></div>
-      </header>
+        <p className="text-xs text-gray-400 font-medium">{formatDate(today, 'EEEE, MMMM d')}</p>
+      </div>
 
       {/* Main Content */}
       <main className="space-y-6">
         {/* Quick Stats */}
-        <div className="grid grid-cols-3 gap-4">
-          <Card variant="gradient" gradient="success" className="text-center transform hover:scale-105 transition-all duration-200">
-            <div className="text-3xl font-bold mb-1">{stats.streak}</div>
-            <div className="text-xs opacity-90 font-medium">Day Streak</div>
-            <div className="text-2xl mt-2">🔥</div>
+        <div className="grid grid-cols-3 gap-3">
+          <Card variant="gradient" gradient="primary" className="text-center">
+            <div className="text-xl font-bold">{stats.streak}</div>
+            <div className="text-xs opacity-90 font-medium mt-1">Day Streak</div>
           </Card>
           
-          <Card variant="gradient" gradient="secondary" className="text-center transform hover:scale-105 transition-all duration-200">
-            <div className="text-xl font-bold mb-1">
+          <Card variant="gradient" gradient="secondary" className="text-center">
+            <div className="text-xl font-bold">
               {stats.lastWorkout ? `${stats.lastWorkout.weight}` : 'N/A'}
             </div>
-            <div className="text-xs opacity-90 font-medium">
-              {stats.lastWorkout ? stats.lastWorkout.exercise : 'No workout'}
+            <div className="text-xs opacity-90 font-medium mt-1">
+              {stats.lastWorkout ? 'Last PR' : 'No PR'}
             </div>
-            <div className="text-2xl mt-2">💪</div>
           </Card>
           
-          <Card variant="gradient" gradient="accent" className="text-center transform hover:scale-105 transition-all duration-200">
-            <div className="text-2xl font-bold mb-1">
+          <Card variant="gradient" gradient="accent" className="text-center">
+            <div className="text-xl font-bold text-gray-900">
               {(stats.weeklyVolume / 1000).toFixed(1)}k
             </div>
-            <div className="text-xs opacity-90 font-medium">Weekly Volume</div>
-            <div className="text-2xl mt-2">📊</div>
+            <div className="text-xs text-gray-600 font-medium mt-1">Weekly Volume</div>
           </Card>
         </div>
 
         {/* Today's Workout */}
         {todayTemplate ? (
-          <Card className="space-y-6">
-            <div className="flex items-center justify-between">
+          <Card className="space-y-4">
+            <div className="flex justify-between items-start">
               <div>
-                <h2 className="text-lg font-bold text-gray-800 font-display flex items-center gap-2">
-                  💪 Today's Workout
-                </h2>
-                <p className="text-purple-600 font-semibold mt-1 text-lg">{todayTemplate.name}</p>
+                <h2 className="text-lg font-bold text-black">Today's Workout</h2>
+                <p className="text-purple-600 font-semibold mt-1">{todayTemplate.name}</p>
               </div>
-              <div className="w-16 h-16 bg-gradient-primary rounded-2xl flex items-center justify-center shadow-lg">
-                <span className="text-white text-3xl">🏋️</span>
+              <div className="w-10 h-10 bg-gradient-primary rounded-lg flex items-center justify-center">
+                <span className="text-white text-lg">💪</span>
               </div>
             </div>
             
-            <div className="bg-gradient-to-br from-gray-50 to-gray-100/50 rounded-2xl p-5 space-y-4">
+            <div className="bg-gray-50 rounded-lg p-3 space-y-2">
               {todayTemplate.exercises.slice(0, 3).map((exercise, index) => (
-                <div key={index} className="flex items-center gap-4 text-gray-700">
-                  <div className="w-10 h-10 bg-gradient-accent rounded-full flex items-center justify-center text-white font-bold shadow-md">
-                    {index + 1}
+                <div key={index} className="flex items-center gap-3">
+                  <div className="w-6 h-6 bg-purple-100 rounded-full flex items-center justify-center">
+                    <span className="text-purple-600 font-bold text-xs">{index + 1}</span>
                   </div>
-                  <span className="font-semibold text-gray-800">Exercise {index + 1}</span>
-                  <span className="text-gray-400">•</span>
-                  <span className="text-purple-600 font-bold">{exercise.targetSets} sets</span>
+                  <span className="font-medium text-gray-900 text-sm flex-1">Exercise {index + 1}</span>
+                  <span className="text-purple-600 font-semibold text-sm">{exercise.targetSets} sets</span>
                 </div>
               ))}
               {todayTemplate.exercises.length > 3 && (
-                <div className="flex items-center gap-4 text-gray-500 pl-14">
-                  <span className="text-sm font-medium">+{todayTemplate.exercises.length - 3} more exercises</span>
+                <div className="flex items-center gap-3 text-gray-500 pl-9">
+                  <span className="text-xs font-medium">+{todayTemplate.exercises.length - 3} more exercises</span>
                 </div>
               )}
             </div>
             
             <Button 
               onClick={startWorkout}
-              className="w-full text-xl py-6 pulse"
+              className="w-full"
               size="lg"
             >
-              🚀 Start Workout
+              Start Workout
             </Button>
           </Card>
         ) : (
-          <Card className="text-center space-y-6">
-            <div className="text-6xl mb-4">😴</div>
-            <div>
-              <h3 className="text-2xl font-bold text-gray-800 mb-2 font-display">Rest Day</h3>
-              <p className="text-gray-600 text-lg">No workout scheduled for today</p>
-            </div>
+          <Card className="text-center py-8">
+            <div className="text-4xl mb-4">🏃‍♂️</div>
+            <h3 className="text-lg font-bold text-black mb-2">Rest Day</h3>
+            <p className="text-gray-600 text-sm mb-4">No workout scheduled for today</p>
             <Button 
               onClick={() => window.location.href = '/templates'}
               variant="secondary"
-              size="lg"
+              size="md"
             >
-              📋 Create Template
+              Create Template
             </Button>
           </Card>
         )}
 
         {/* Recent Activity */}
         <div>
-          <h2 className="text-lg font-bold text-gray-800 mb-4 flex items-center gap-2 font-display">
-            📈 Recent Activity
-          </h2>
-          <div className="space-y-4">
+          <h2 className="text-lg font-bold text-black mb-4">Recent Activity</h2>
+          <div className="space-y-3">
             {recentWorkouts.length > 0 ? (
               recentWorkouts.map((workout) => (
-                <Card 
-                  key={workout.id} 
-                  className="hover:shadow-xl transform hover:-translate-y-1 transition-all duration-200"
-                >
+                <Card key={workout.id}>
                   <div className="flex justify-between items-center">
-                    <div className="flex items-center gap-4">
-                      <div className="w-14 h-14 bg-gradient-primary rounded-2xl flex items-center justify-center shadow-lg">
-                        <span className="text-white text-2xl">📅</span>
+                    <div className="flex items-center gap-3">
+                      <div className="w-10 h-10 bg-gray-100 rounded-lg flex items-center justify-center">
+                        <span className="text-gray-600 text-lg">📅</span>
                       </div>
                       <div>
-                        <p className="font-bold text-gray-800 text-lg">
+                        <p className="font-semibold text-gray-900">
                           {formatDate(new Date(workout.date), 'EEEE')} Workout
                         </p>
-                        <div className="flex items-center gap-3 text-sm text-gray-600 mt-1">
-                          <span className="font-medium">{workout.exercises.length} exercises</span>
+                        <div className="flex items-center gap-2 text-sm text-gray-500 mt-0.5">
+                          <span>{workout.exercises.length} exercises</span>
                           <span>•</span>
-                          <span className={workout.status === 'completed' ? 'text-green-600 font-semibold' : 'text-yellow-600 font-semibold'}>
-                            {workout.status === 'completed' ? '✅ Completed' : '⏸️ In Progress'}
+                          <span className={workout.status === 'completed' ? 'text-green-600' : 'text-yellow-600'}>
+                            {workout.status === 'completed' ? 'Completed' : 'In Progress'}
                           </span>
                         </div>
                       </div>
                     </div>
-                    <div className="text-3xl">
-                      {workout.status === 'completed' ? '🎉' : '⏸️'}
+                    <div className="text-2xl">
+                      {workout.status === 'completed' ? '✅' : '⏸️'}
                     </div>
                   </div>
                 </Card>
               ))
             ) : (
-              <Card className="text-center space-y-4">
-                <div className="text-6xl">🏃‍♂️</div>
-                <div>
-                  <h3 className="text-xl font-bold text-gray-800 mb-2 font-display">Ready to Get Started?</h3>
-                  <p className="text-gray-600 text-lg">No recent workouts yet</p>
-                  <p className="text-sm text-gray-500 mt-2">Start your first workout above!</p>
-                </div>
+              <Card className="text-center py-6">
+                <div className="text-4xl mb-3">🏋️‍♂️</div>
+                <h3 className="text-lg font-bold text-black mb-2">Ready to Get Started?</h3>
+                <p className="text-gray-600 text-sm">No recent workouts yet</p>
               </Card>
             )}
           </div>
         </div>
       </main>
-
     </div>
   );
 }

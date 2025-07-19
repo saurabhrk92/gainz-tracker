@@ -19,19 +19,19 @@ export default function Button({
   children,
   ...props
 }: ButtonProps) {
-  const baseClasses = 'font-semibold rounded-2xl transition-all duration-200 flex items-center justify-center gap-2 no-select transform hover:-translate-y-1 active:scale-95 shadow-lg hover:shadow-xl';
+  const baseClasses = 'font-semibold rounded-lg transition-all duration-200 flex items-center justify-center gap-2 active:scale-95 border';
   
   const variants = {
-    primary: 'bg-gradient-success text-white',
-    secondary: 'bg-gradient-accent text-white', 
-    glass: 'bg-white/25 backdrop-blur-md border border-white/20 text-gray-700 hover:bg-white/35',
-    danger: 'bg-gradient-to-r from-red-500 to-red-600 text-white',
+    primary: 'bg-gradient-primary text-white border-transparent hover:opacity-90',
+    secondary: 'bg-white text-gray-900 border-gray-200 hover:bg-gray-50', 
+    glass: 'bg-gray-50 text-gray-700 border-gray-200 hover:bg-gray-100',
+    danger: 'bg-red-500 text-white border-transparent hover:bg-red-600',
   };
   
   const sizes = {
-    sm: 'py-3 px-4 text-sm min-h-[44px]',
-    md: 'py-4 px-6 text-base min-h-[48px]',
-    lg: 'py-5 px-8 text-lg font-bold min-h-[56px]',
+    sm: 'py-2 px-3 text-sm min-h-[36px]',
+    md: 'py-3 px-4 text-sm min-h-[44px]',
+    lg: 'py-4 px-6 text-base min-h-[48px]',
   };
   
   return (

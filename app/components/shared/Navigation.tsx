@@ -1,5 +1,6 @@
 'use client';
 
+import { useState } from 'react';
 import { usePathname } from 'next/navigation';
 import Link from 'next/link';
 import { cn } from '@/lib/utils';
@@ -14,47 +15,100 @@ const navItems = [
 
 export default function Navigation() {
   const pathname = usePathname();
+  const [isOpen, setIsOpen] = useState(false);
+
+  const activeItem = navItems.find(item => item.href === pathname);
 
   return (
-    <nav className="fixed bottom-0 left-0 right-0 safe-bottom z-50">
-      <div className="mx-3 mb-3">
-        <div className="bg-white/95 backdrop-blur-xl border border-white/20 rounded-3xl shadow-glass">
-          <div className="flex justify-around items-center h-24 px-2">
+    <>
+      {/* Hamburger Menu Button */}
+      <div className="fixed top-4 right-6 z-50">
+        <button
+          onClick={() => setIsOpen(!isOpen)}
+          className="w-10 h-10 bg-black rounded-lg flex items-center justify-center shadow-lg"
+        >
+          <div className="w-5 h-5 flex flex-col justify-between">
+            <div className={cn(
+              "h-0.5 bg-white transition-all duration-300",
+              isOpen ? "rotate-45 translate-y-2" : ""
+            )} />
+            <div className={cn(
+              "h-0.5 bg-white transition-all duration-300",
+              isOpen ? "opacity-0" : ""
+            )} />
+            <div className={cn(
+              "h-0.5 bg-white transition-all duration-300",
+              isOpen ? "-rotate-45 -translate-y-2" : ""
+            )} />
+          </div>
+        </button>
+      </div>
+
+      {/* Overlay */}
+      {isOpen && (
+        <div 
+          className="fixed inset-0 bg-black/50 z-40"
+          onClick={() => setIsOpen(false)}
+        />
+      )}
+
+      {/* Side Menu */}
+      <div className={cn(
+        "fixed top-0 right-0 h-full w-80 bg-white shadow-2xl z-50 transform transition-transform duration-300",
+        isOpen ? "translate-x-0" : "translate-x-full"
+      )}>
+        <div className="p-6">
+          {/* Header */}
+          <div className="flex items-center justify-between mb-8">
+            <div>
+              <h2 className="text-xl font-bold text-black">Gainz Tracker</h2>
+              <p className="text-sm text-gray-500">Navigation</p>
+            </div>
+            <button
+              onClick={() => setIsOpen(false)}
+              className="w-8 h-8 bg-gray-100 rounded-lg flex items-center justify-center"
+            >
+              ✕
+            </button>
+          </div>
+
+          {/* Navigation Items */}
+          <nav className="space-y-2">
             {navItems.map((item) => {
               const isActive = pathname === item.href;
               return (
                 <Link
                   key={item.href}
                   href={item.href}
-                  prefetch={true}
+                  onClick={() => setIsOpen(false)}
                   className={cn(
-                    'flex flex-col items-center justify-center py-3 px-2 rounded-2xl transition-all duration-200 min-w-0 flex-1 transform min-h-[64px]',
+                    'flex items-center gap-3 px-4 py-3 rounded-lg transition-all duration-200',
                     isActive 
-                      ? 'bg-gradient-primary text-white shadow-lg scale-105' 
-                      : 'text-gray-600 hover:text-primary-600 hover:bg-gray-50/80 hover:scale-105'
+                      ? 'bg-purple-600 text-white' 
+                      : 'text-gray-700 hover:bg-gray-100'
                   )}
                 >
-                  <span className={cn(
-                    'text-2xl mb-1 transition-all duration-200',
-                    isActive && 'drop-shadow-sm'
-                  )}>
-                    {item.icon}
-                  </span>
-                  <span className={cn(
-                    'text-xs font-medium truncate transition-all duration-200 mt-1',
-                    isActive ? 'font-semibold text-white' : 'text-gray-600'
-                  )}>
-                    {item.label}
-                  </span>
+                  <span className="text-lg">{item.icon}</span>
+                  <span className="font-medium">{item.label}</span>
                   {isActive && (
-                    <div className="w-2 h-2 bg-white rounded-full mt-1 animate-pulse"></div>
+                    <div className="ml-auto w-2 h-2 bg-white rounded-full" />
                   )}
                 </Link>
               );
             })}
+          </nav>
+
+          {/* Footer */}
+          <div className="absolute bottom-6 left-6 right-6">
+            <div className="bg-gray-50 rounded-lg p-4 text-center">
+              <p className="text-xs text-gray-600">
+                Made with ❤️ for fitness enthusiasts
+              </p>
+            </div>
           </div>
         </div>
       </div>
-    </nav>
+
+    </>
   );
 }

@@ -20,12 +20,12 @@ export default function Card({
   onClick,
   style,
 }: CardProps) {
-  const baseClasses = 'rounded-3xl p-4 md:p-6 transition-all duration-200 border border-gray-100/50';
+  const baseClasses = 'rounded-lg p-4 transition-all duration-200';
   
   const variants = {
-    default: 'bg-white/95 backdrop-blur-md shadow-lg hover:shadow-xl',
-    glass: 'bg-white/25 backdrop-blur-md border-white/20 shadow-glass',
-    gradient: 'shadow-xl',
+    default: 'bg-white border border-gray-100 shadow-sm hover:shadow-md',
+    glass: 'bg-gray-50/50 border border-gray-100',
+    gradient: 'text-white border-0',
   };
   
   const gradients = {

@@ -110,40 +110,36 @@ export default function SettingsPage() {
   };
 
   return (
-    <div className="flex flex-col min-h-screen bg-gray-50">
+    <div className="min-h-screen">
       {/* Header */}
-      <header className="bg-gradient-primary text-white p-4 safe-top relative overflow-hidden rounded-b-3xl mb-4 mx-[-16px] mt-[-16px]">
-        <div className="relative z-10 px-2">
-          <h1 className="text-xl font-bold font-display">⚙️ Settings</h1>
-          <p className="text-white/90 mt-1 text-sm">Manage your account and data</p>
-        </div>
-        {/* Decorative elements */}
-        <div className="absolute top-0 right-0 w-20 h-20 bg-white/10 rounded-full -translate-y-6 translate-x-6 pointer-events-none"></div>
-      </header>
+      <div className="pt-12 pb-8">
+        <h1 className="text-2xl font-bold text-black">Settings</h1>
+        <p className="text-gray-500 text-sm mt-1">Manage your account and data</p>
+      </div>
 
       {/* Main Content */}
-      <main className="flex-1 space-y-6">
+      <main className="space-y-6">
         {/* Account Section */}
-        <Card className="relative overflow-hidden transform hover:scale-[1.01] transition-all duration-200">
-          <h2 className="text-lg font-bold text-gray-800 mb-4 flex items-center gap-2 font-display">👤 Account</h2>
+        <Card>
+          <h2 className="text-lg font-bold text-black mb-4">Account</h2>
           
           {isAuthenticated ? (
-            <div className="space-y-6">
-              <div className="bg-gradient-to-br from-gray-50 to-gray-100/50 rounded-2xl p-5">
-                <div className="flex items-center gap-4">
+            <div className="space-y-4">
+              <div className="bg-gray-50 rounded-lg p-4">
+                <div className="flex items-center gap-3">
                   {user?.image && (
                     <img 
                       src={user.image} 
                       alt="Profile" 
-                      className="w-16 h-16 rounded-2xl shadow-md border-2 border-white"
+                      className="w-12 h-12 rounded-lg border border-gray-200"
                     />
                   )}
                   <div>
-                    <p className="font-bold text-gray-800 text-lg">{user?.name}</p>
-                    <p className="text-sm text-gray-600 font-medium">{user?.email}</p>
-                    <div className="flex items-center gap-2 mt-2">
+                    <p className="font-semibold text-black">{user?.name}</p>
+                    <p className="text-sm text-gray-600">{user?.email}</p>
+                    <div className="flex items-center gap-2 mt-1">
                       <div className="w-2 h-2 bg-green-500 rounded-full"></div>
-                      <span className="text-xs text-green-600 font-semibold">Connected</span>
+                      <span className="text-xs text-green-600 font-medium">Connected</span>
                     </div>
                   </div>
                 </div>
@@ -155,52 +151,46 @@ export default function SettingsPage() {
                 className="w-full"
                 size="lg"
               >
-                🚪 Sign Out
+                Sign Out
               </Button>
             </div>
           ) : (
-            <div className="text-center space-y-6 py-4">
-              <div className="text-6xl opacity-50">🔒</div>
-              <div>
-                <h3 className="text-xl font-bold text-gray-800 mb-2 font-display">Sign in to unlock cloud features</h3>
-                <p className="text-gray-600 text-lg">Enable cloud sync and backup for your workout data</p>
-              </div>
+            <div className="text-center py-6">
+              <div className="text-4xl mb-4">🔒</div>
+              <h3 className="text-lg font-bold text-black mb-2">Sign in to unlock cloud features</h3>
+              <p className="text-gray-600 text-sm mb-4">Enable cloud sync and backup for your workout data</p>
               <Button
                 onClick={() => signIn()}
                 className="w-full"
                 size="lg"
               >
-                🔗 Sign In with Google
+                Sign In with Google
               </Button>
             </div>
           )}
-          <div className="absolute top-0 right-0 w-16 h-16 bg-gradient-primary opacity-5 rounded-full -translate-y-4 translate-x-4"></div>
         </Card>
 
         {/* Sync & Backup Section */}
         {isAuthenticated && (
-          <Card className="relative overflow-hidden transform hover:scale-[1.01] transition-all duration-200">
-            <h2 className="text-lg font-bold text-gray-800 mb-4 flex items-center gap-2 font-display">☁️ Sync & Backup</h2>
+          <Card>
+            <h2 className="text-lg font-bold text-black mb-4">Sync & Backup</h2>
             
             {syncStatus && (
-              <div className="mb-6 p-4 bg-gradient-to-r from-blue-50 to-cyan-50 border border-blue-200/50 rounded-2xl shadow-sm">
-                <p className="text-blue-800 font-medium flex items-center gap-2">
-                  <span className="text-lg">ℹ️</span>
-                  {syncStatus}
-                </p>
+              <div className="mb-4 p-3 bg-blue-50 border border-blue-200 rounded-lg">
+                <p className="text-blue-800 text-sm font-medium">{syncStatus}</p>
               </div>
             )}
             
-            <div className="space-y-6">
-              <div className="bg-gradient-to-br from-gray-50 to-gray-100/50 rounded-2xl p-5 space-y-4">
+            <div className="space-y-4">
+              <div className="bg-gray-50 rounded-lg p-4 space-y-3">
                 <div className="flex gap-3">
                   <Button
                     onClick={handleBackup}
                     disabled={loading}
                     className="flex-1"
-                    size="lg"
+                    size="md"
                   >
-                    {loading ? '⏳ Creating...' : '💾 Create Backup'}
+                    {loading ? 'Creating...' : 'Create Backup'}
                   </Button>
                   
                   <Button
@@ -208,45 +198,40 @@ export default function SettingsPage() {
                     onClick={() => handleRestore()}
                     disabled={loading || backups.length === 0}
                     className="flex-1"
-                    size="lg"
+                    size="md"
                   >
-                    📥 Restore Latest
+                    Restore Latest
                   </Button>
                 </div>
                 
-                <div className="text-center bg-white/60 rounded-xl p-3">
-                  <p className="text-sm text-gray-600 font-medium flex items-center justify-center gap-2">
-                    <span className="text-lg">🔄</span>
+                <div className="text-center bg-white rounded-lg p-3 border border-gray-200">
+                  <p className="text-sm text-gray-600">
                     Automatic backup happens every 24 hours
                   </p>
                 </div>
               </div>
             </div>
-            <div className="absolute top-0 right-0 w-16 h-16 bg-gradient-secondary opacity-5 rounded-full -translate-y-4 translate-x-4"></div>
-          </Card>
+        </Card>
         )}
 
         {/* Backup History */}
         {isAuthenticated && backups.length > 0 && (
-          <Card className="relative overflow-hidden transform hover:scale-[1.01] transition-all duration-200">
-            <h2 className="text-lg font-bold text-gray-800 mb-4 flex items-center gap-2 font-display">📋 Backup History</h2>
+          <Card>
+            <h2 className="text-lg font-bold text-black mb-4">Backup History</h2>
             
-            <div className="space-y-4">
+            <div className="space-y-3">
               {backups.map((backup, index) => (
-                <div
-                  key={backup.id}
-                  className="bg-gradient-to-br from-gray-50 to-gray-100/50 rounded-2xl p-5 shadow-sm hover:shadow-md transition-all duration-200 transform hover:scale-[1.01]"
-                >
+                <div key={backup.id} className="bg-gray-50 rounded-lg p-4">
                   <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-4">
-                      <div className="w-12 h-12 bg-gradient-accent rounded-2xl flex items-center justify-center text-white font-bold shadow-md">
-                        #{index + 1}
+                    <div className="flex items-center gap-3">
+                      <div className="w-10 h-10 bg-purple-100 rounded-lg flex items-center justify-center">
+                        <span className="text-purple-600 font-bold text-sm">#{index + 1}</span>
                       </div>
                       <div>
-                        <p className="font-bold text-gray-800 text-lg">
+                        <p className="font-semibold text-black">
                           {formatDate(new Date(backup.createdTime), 'MMM d, yyyy h:mm a')}
                         </p>
-                        <p className="text-sm text-gray-600 font-medium">{backup.name}</p>
+                        <p className="text-sm text-gray-600">{backup.name}</p>
                       </div>
                     </div>
                     
@@ -257,7 +242,7 @@ export default function SettingsPage() {
                         onClick={() => handleRestore(backup.id)}
                         disabled={loading}
                       >
-                        📥 Restore
+                        Restore
                       </Button>
                       <Button
                         variant="danger"
@@ -265,57 +250,42 @@ export default function SettingsPage() {
                         onClick={() => handleDeleteBackup(backup.id)}
                         disabled={loading}
                       >
-                        🗑️ Delete
+                        Delete
                       </Button>
                     </div>
                   </div>
                 </div>
               ))}
             </div>
-            <div className="absolute top-0 right-0 w-16 h-16 bg-gradient-accent opacity-5 rounded-full -translate-y-4 translate-x-4"></div>
           </Card>
         )}
 
         {/* App Info */}
-        <Card className="relative overflow-hidden transform hover:scale-[1.01] transition-all duration-200">
-          <h2 className="text-lg font-bold text-gray-800 mb-4 flex items-center gap-2 font-display">ℹ️ About</h2>
+        <Card>
+          <h2 className="text-lg font-bold text-black mb-4">About</h2>
           
-          <div className="bg-gradient-to-br from-gray-50 to-gray-100/50 rounded-2xl p-5 space-y-4">
-            <div className="space-y-4 text-gray-700">
-              <div className="flex justify-between items-center bg-white/60 rounded-xl p-3">
-                <span className="font-semibold flex items-center gap-2">
-                  <span className="text-lg">📱</span>
-                  Version
-                </span>
-                <span className="font-bold text-gray-800">1.0.0</span>
+          <div className="bg-gray-50 rounded-lg p-4 space-y-3">
+            <div className="space-y-3">
+              <div className="flex justify-between items-center bg-white rounded-lg p-3 border border-gray-200">
+                <span className="font-medium text-gray-700">Version</span>
+                <span className="font-semibold text-black">1.0.0</span>
               </div>
-              <div className="flex justify-between items-center bg-white/60 rounded-xl p-3">
-                <span className="font-semibold flex items-center gap-2">
-                  <span className="text-lg">🔨</span>
-                  Build
-                </span>
-                <span className="font-bold text-gray-800">2025.07.19</span>
+              <div className="flex justify-between items-center bg-white rounded-lg p-3 border border-gray-200">
+                <span className="font-medium text-gray-700">Build</span>
+                <span className="font-semibold text-black">2025.07.19</span>
               </div>
-              <div className="flex justify-between items-center bg-white/60 rounded-xl p-3">
-                <span className="font-semibold flex items-center gap-2">
-                  <span className="text-lg">💾</span>
-                  Storage
-                </span>
-                <span className="font-bold text-gray-800">Local + Google Drive</span>
+              <div className="flex justify-between items-center bg-white rounded-lg p-3 border border-gray-200">
+                <span className="font-medium text-gray-700">Storage</span>
+                <span className="font-semibold text-black">Local + Google Drive</span>
               </div>
             </div>
             
-            <div className="text-center bg-gradient-warm rounded-xl p-4 text-white shadow-md">
-              <p className="font-bold flex items-center justify-center gap-2">
-                <span className="text-lg">❤️</span>
-                Made with love for fitness enthusiasts
-              </p>
+            <div className="text-center bg-gradient-primary rounded-lg p-4 text-white">
+              <p className="font-semibold">Made with ❤️ for fitness enthusiasts</p>
             </div>
           </div>
-          <div className="absolute top-0 right-0 w-16 h-16 bg-gradient-warm opacity-5 rounded-full -translate-y-4 translate-x-4"></div>
         </Card>
       </main>
-
     </div>
   );
 }

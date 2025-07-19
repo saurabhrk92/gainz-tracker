@@ -22,7 +22,7 @@ export default function AppShell({ children }: AppShellProps) {
   const hideNavigation = pathname === '/auth/signin' || pathname?.startsWith('/workout');
 
   return (
-    <div className="relative min-h-screen bg-gray-50">
+    <div className="relative min-h-screen bg-white">
       {/* Loading bar */}
       {isTransitioning && (
         <div className="fixed top-0 left-0 right-0 z-[9999]">
@@ -31,8 +31,8 @@ export default function AppShell({ children }: AppShellProps) {
       )}
       
       {/* Main content */}
-      <main className={`${!hideNavigation ? 'pb-32' : ''} min-h-screen`}>
-        <div className="px-4 py-4 max-w-md mx-auto">
+      <main className="min-h-screen">
+        <div className="px-6 py-0 max-w-lg mx-auto">
           {children}
         </div>
       </main>
