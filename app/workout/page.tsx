@@ -362,6 +362,7 @@ function WorkoutPageContent() {
           previousSets={currentSets} 
           barWeight={currentExercise.barWeight || 45}
           exerciseId={templateExercise.exerciseId}
+          exerciseType={currentExercise.type}
         />
 
         {/* Navigation */}

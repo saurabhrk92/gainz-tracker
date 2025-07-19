@@ -24,12 +24,20 @@ export const WEEK_DAYS = [
 export const EQUIPMENT_TYPES = [
   { value: 'barbell', label: 'Barbell', icon: '🏋️' },
   { value: 'dumbbell', label: 'Dumbbell', icon: '💪' },
+  { value: 'fixed_bar', label: 'Fixed Weight Bar', icon: '⚖️' },
+  { value: 'machine', label: 'Machine', icon: '🎰' },
 ] as const;
 
 export const BAR_WEIGHTS = [
   { value: 45, label: '45 lbs (Olympic)' },
   { value: 35, label: '35 lbs (Women\'s)' },
 ] as const;
+
+// Generate dumbbell weights from 2.5 to 150 in increments of 2.5
+export const DUMBBELL_WEIGHTS = Array.from({ length: 60 }, (_, i) => (i + 1) * 2.5);
+
+// Generate fixed bar weights from 5 to 200 in increments of 5
+export const FIXED_BAR_WEIGHTS = Array.from({ length: 40 }, (_, i) => (i + 1) * 5);
 
 export const PLATE_SIZES = [45, 25, 10, 5, 2.5] as const;
 

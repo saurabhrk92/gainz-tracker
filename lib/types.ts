@@ -9,7 +9,7 @@ export type MuscleGroup =
   | 'core' 
   | 'calves';
 
-export type EquipmentType = 'barbell' | 'dumbbell';
+export type EquipmentType = 'barbell' | 'dumbbell' | 'fixed_bar' | 'machine';
 
 export type WeekDay = 
   | 'monday' 
@@ -34,9 +34,11 @@ export interface Exercise {
   name: string;
   muscleGroup: MuscleGroup;
   type: EquipmentType;
-  barWeight?: number; // 45 or 35
-  dumbbellWeight?: number;
+  barWeight?: number; // For barbell: 45 or 35
+  dumbbellWeight?: number; // For dumbbell: 5-150 in increments of 5
   dumbbellCount?: number; // 1 or 2
+  fixedBarWeight?: number; // For fixed_bar: any weight in increments of 5
+  machineWeight?: number; // For machine: any custom weight
   defaultRestTime: number; // seconds
   created: Date;
   lastUsed: Date;

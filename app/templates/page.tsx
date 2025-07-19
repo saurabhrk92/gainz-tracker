@@ -181,20 +181,22 @@ export default function TemplatesPage() {
                         </div>
                       </div>
                       
-                      <div className="flex gap-2 ml-3">
+                      <div className="flex flex-col gap-2 ml-3 min-w-0">
                         <Button
                           variant="glass"
                           size="sm"
                           onClick={() => handleEditTemplate(template)}
+                          className="text-xs"
                         >
                           Edit
                         </Button>
                         <Button
-                          variant="danger"
+                          variant="glass"
                           size="sm"
                           onClick={() => handleDeleteTemplate(template.id)}
+                          className="text-xs text-gray-600 hover:text-red-600"
                         >
-                          Delete
+                          🗑️
                         </Button>
                       </div>
                     </div>

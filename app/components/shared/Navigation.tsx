@@ -25,19 +25,19 @@ export default function Navigation() {
       <div className="fixed top-4 right-6 z-50">
         <button
           onClick={() => setIsOpen(!isOpen)}
-          className="w-10 h-10 bg-black rounded-lg flex items-center justify-center shadow-lg"
+          className="w-10 h-10 bg-gray-100 rounded-lg flex items-center justify-center shadow-lg border border-gray-200"
         >
           <div className="w-5 h-5 flex flex-col justify-between">
             <div className={cn(
-              "h-0.5 bg-white transition-all duration-300",
+              "h-0.5 bg-purple-600 transition-all duration-300",
               isOpen ? "rotate-45 translate-y-2" : ""
             )} />
             <div className={cn(
-              "h-0.5 bg-white transition-all duration-300",
+              "h-0.5 bg-purple-600 transition-all duration-300",
               isOpen ? "opacity-0" : ""
             )} />
             <div className={cn(
-              "h-0.5 bg-white transition-all duration-300",
+              "h-0.5 bg-purple-600 transition-all duration-300",
               isOpen ? "-rotate-45 -translate-y-2" : ""
             )} />
           </div>
