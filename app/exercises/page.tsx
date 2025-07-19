@@ -177,7 +177,7 @@ export default function ExercisesPage() {
                         <div className="bg-gray-50 rounded-lg p-3 space-y-2">
                           <div className="flex items-center gap-2 flex-wrap">
                             <div className="flex items-center gap-2 bg-white rounded-lg px-3 py-1 border border-gray-200">
-                              <span>{equipmentInfo?.icon}</span>
+                              <EquipmentIcon name={equipmentInfo?.icon as any} size={16} />
                               <span className="font-medium text-sm text-gray-700">{equipmentInfo?.label}</span>
                             </div>
                             

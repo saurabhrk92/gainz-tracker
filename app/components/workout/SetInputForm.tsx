@@ -6,6 +6,7 @@ import { DUMBBELL_WEIGHTS, FIXED_BAR_WEIGHTS } from '@/lib/constants';
 import { EquipmentType } from '@/lib/types';
 import Button from '../ui/Button';
 import Card from '../ui/Card';
+import { EquipmentIcon } from '../ui/Icon';
 
 interface SetInputFormProps {
   onSubmit: (reps: number, weight: number) => void;
@@ -18,14 +19,15 @@ interface SetInputFormProps {
 export default function SetInputForm({ onSubmit, previousSets, barWeight = 45, exerciseId, exerciseType }: SetInputFormProps) {
   const [reps, setReps] = useState<string>('');
   const [weight, setWeight] = useState<string>('');
+  const [isInitialized, setIsInitialized] = useState<boolean>(false);
   const [lastWorkoutData, setLastWorkoutData] = useState<{ reps: number; weight: number } | null>(null);
   const [plateWeights, setPlateWeights] = useState<{ [key: number]: number }>({
     45: 0,
     35: 0, 
     25: 0,
     10: 0,
-    5: 0,
-    2.5: 0
+    2.5: 0,
+    5: 0
   });
 
   // Load last workout data for this exercise and set number
@@ -37,15 +39,21 @@ export default function SetInputForm({ onSubmit, previousSets, barWeight = 45, e
         const lastWorkout = await db.getLastWorkoutForExercise(exerciseId);
         
         if (lastWorkout) {
+          console.log('Found last workout:', lastWorkout);
           const exerciseData = lastWorkout.exercises.find(ex => ex.exerciseId === exerciseId);
+          console.log('Exercise data in last workout:', exerciseData);
           if (exerciseData && exerciseData.sets.length > 0) {
             const currentSetNumber = previousSets.length;
             const lastSet = exerciseData.sets[currentSetNumber];
             
             if (lastSet) {
+              console.log('Found historical set data:', lastSet);
               setLastWorkoutData({ reps: lastSet.reps, weight: lastSet.weight });
-              setReps(lastSet.reps.toString());
-              setWeight(lastSet.weight.toString());
+              if (!isInitialized) {
+                setReps(lastSet.reps.toString());
+                setWeight(lastSet.weight.toString());
+                setIsInitialized(true);
+              }
               
               // Only calculate plate config for barbell exercises
               if (exerciseType === 'barbell') {
@@ -54,16 +62,80 @@ export default function SetInputForm({ onSubmit, previousSets, barWeight = 45, e
                 setPlateWeights(plateConfig);
               }
             } else {
+              // No historical data for this set number, try to use last set from current session
               setLastWorkoutData(null);
+              if (!isInitialized) {
+                const lastCurrentSet = previousSets[previousSets.length - 1];
+                if (lastCurrentSet) {
+                  console.log('No historical data, using last set from current session:', lastCurrentSet);
+                  setReps(lastCurrentSet.reps.toString());
+                  setWeight(lastCurrentSet.weight.toString());
+                  
+                  // Calculate plate config for barbell exercises
+                  if (exerciseType === 'barbell') {
+                    const targetWeight = lastCurrentSet.weight - barWeight;
+                    const plateConfig = calculatePlateConfig(targetWeight);
+                    setPlateWeights(plateConfig);
+                  }
+                } else {
+                  console.log('No historical data and no previous sets, leaving empty for user input');
+                  setReps('');
+                  setWeight('');
+                  setPlateWeights({ 45: 0, 35: 0, 25: 0, 10: 0, 2.5: 0, 5: 0 });
+                }
+                setIsInitialized(true);
+              }
+            }
+          } else {
+            // Found historical exercise data but no sets
+            setLastWorkoutData(null);
+            if (!isInitialized) {
+              const lastCurrentSet = previousSets[previousSets.length - 1];
+              if (lastCurrentSet) {
+                console.log('Historical exercise found but no sets, using last set from current session:', lastCurrentSet);
+                setReps(lastCurrentSet.reps.toString());
+                setWeight(lastCurrentSet.weight.toString());
+                
+                // Calculate plate config for barbell exercises
+                if (exerciseType === 'barbell') {
+                  const targetWeight = lastCurrentSet.weight - barWeight;
+                  const plateConfig = calculatePlateConfig(targetWeight);
+                  setPlateWeights(plateConfig);
+                }
+              } else {
+                console.log('Historical exercise found but no sets and no previous sets, leaving empty for user input');
+                setReps('');
+                setWeight('');
+                setPlateWeights({ 45: 0, 35: 0, 25: 0, 10: 0, 5: 0, 2.5: 0 });
+              }
+              setIsInitialized(true);
+            }
+          }
+        } else {
+          console.log('No last workout found for exercise:', exerciseId);
+          setLastWorkoutData(null);
+          if (!isInitialized) {
+            // No historical workout data, try to use last set from current session
+            const lastCurrentSet = previousSets[previousSets.length - 1];
+            if (lastCurrentSet) {
+              console.log('No historical workout, using last set from current session:', lastCurrentSet);
+              setReps(lastCurrentSet.reps.toString());
+              setWeight(lastCurrentSet.weight.toString());
+              
+              // Calculate plate config for barbell exercises
+              if (exerciseType === 'barbell') {
+                const targetWeight = lastCurrentSet.weight - barWeight;
+                const plateConfig = calculatePlateConfig(targetWeight);
+                setPlateWeights(plateConfig);
+              }
+            } else {
+              console.log('No historical workout and no previous sets, leaving empty for user input');
               setReps('');
               setWeight('');
               setPlateWeights({ 45: 0, 35: 0, 25: 0, 10: 0, 5: 0, 2.5: 0 });
             }
-          } else {
-            setLastWorkoutData(null);
+            setIsInitialized(true);
           }
-        } else {
-          setLastWorkoutData(null);
         }
       } catch (error) {
         console.error('Failed to load last workout data:', error);
@@ -83,9 +155,9 @@ export default function SetInputForm({ onSubmit, previousSets, barWeight = 45, e
 
   // Calculate plate configuration for a target weight (per side)
   const calculatePlateConfig = (targetWeightPerSide: number) => {
-    const plateTypes = [45, 35, 25, 10, 5, 2.5];
+    const plateTypes = [45, 35, 25, 10, 2.5, 5];
     const config: { [key: number]: number } = {
-      45: 0, 35: 0, 25: 0, 10: 0, 5: 0, 2.5: 0
+      45: 0, 35: 0, 25: 0, 10: 0, 2.5: 0, 5: 0
     };
     
     let remainingWeight = targetWeightPerSide / 2;
@@ -117,7 +189,7 @@ export default function SetInputForm({ onSubmit, previousSets, barWeight = 45, e
   // Reset all plates
   const resetPlates = () => {
     setPlateWeights({
-      45: 0, 35: 0, 25: 0, 10: 0, 5: 0, 2.5: 0
+      45: 0, 35: 0, 25: 0, 10: 0, 2.5: 0, 5: 0
     });
     setWeight(barWeight.toString());
   };
@@ -132,8 +204,14 @@ export default function SetInputForm({ onSubmit, previousSets, barWeight = 45, e
     const repsNum = parseInt(reps);
     const weightNum = parseFloat(weight);
     
-    if (isNaN(repsNum) || isNaN(weightNum) || repsNum <= 0 || weightNum < 0) {
+    if (isNaN(repsNum) || isNaN(weightNum) || repsNum <= 0) {
       alert('Please enter valid reps and weight values');
+      return;
+    }
+    
+    // For bodyweight exercises, 0 weight is valid
+    if (exerciseType !== 'bodyweight' && weightNum <= 0) {
+      alert('Please enter a valid weight greater than 0');
       return;
     }
     
@@ -158,7 +236,8 @@ export default function SetInputForm({ onSubmit, previousSets, barWeight = 45, e
       case 'barbell':
         return (
           <div>
-            <label className="block text-sm font-semibold text-gray-700 mb-2">
+            <label className="block text-sm font-semibold text-gray-700 mb-2 flex items-center gap-2">
+              <EquipmentIcon name="barbell" size={16} />
               Total Weight (lbs)
             </label>
             <div className="flex items-center gap-2">
@@ -171,7 +250,7 @@ export default function SetInputForm({ onSubmit, previousSets, barWeight = 45, e
               </button>
               <input
                 type="number"
-                value={weight || (lastWorkoutData ? lastWorkoutData.weight.toString() : '')}
+                value={weight}
                 onChange={(e) => setWeight(e.target.value)}
                 placeholder={lastWorkoutData ? lastWorkoutData.weight.toString() : (suggestedWeight > 0 ? suggestedWeight.toString() : "135")}
                 className="flex-1 px-3 py-3 rounded-lg border border-gray-200 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-purple-500 transition-all duration-200 min-h-[44px] text-sm text-center font-bold"
@@ -193,7 +272,8 @@ export default function SetInputForm({ onSubmit, previousSets, barWeight = 45, e
       case 'dumbbell':
         return (
           <div>
-            <label className="block text-sm font-semibold text-gray-700 mb-2">
+            <label className="block text-sm font-semibold text-gray-700 mb-2 flex items-center gap-2">
+              <EquipmentIcon name="dumbbell" size={16} />
               Dumbbell Weight (lbs per dumbbell)
             </label>
             <div className="flex items-center gap-2">
@@ -228,7 +308,8 @@ export default function SetInputForm({ onSubmit, previousSets, barWeight = 45, e
       case 'fixed_bar':
         return (
           <div>
-            <label className="block text-sm font-semibold text-gray-700 mb-2">
+            <label className="block text-sm font-semibold text-gray-700 mb-2 flex items-center gap-2">
+              <EquipmentIcon name="fixed-bar" size={16} />
               Fixed Bar Weight (lbs)
             </label>
             <div className="flex items-center gap-2">
@@ -263,7 +344,8 @@ export default function SetInputForm({ onSubmit, previousSets, barWeight = 45, e
       case 'machine':
         return (
           <div>
-            <label className="block text-sm font-semibold text-gray-700 mb-2">
+            <label className="block text-sm font-semibold text-gray-700 mb-2 flex items-center gap-2">
+              <EquipmentIcon name="machine" size={16} />
               Machine Weight (lbs)
             </label>
             <div className="flex items-center gap-2">
@@ -298,7 +380,8 @@ export default function SetInputForm({ onSubmit, previousSets, barWeight = 45, e
       case 'bodyweight':
         return (
           <div>
-            <label className="block text-sm font-semibold text-gray-700 mb-2">
+            <label className="block text-sm font-semibold text-gray-700 mb-2 flex items-center gap-2">
+              <EquipmentIcon name="dumbbell" size={16} />
               Additional Weight (lbs)
             </label>
             <div className="flex items-center gap-2">
@@ -406,11 +489,11 @@ export default function SetInputForm({ onSubmit, previousSets, barWeight = 45, e
                   const weight = parseFloat(plateWeight);
                   const plateColor = {
                     45: '#dc2626', 35: '#16a34a', 25: '#2563eb',
-                    10: '#4b5563', 5: '#eab308', 2.5: '#ea580c'
+                    10: '#4b5563', 2.5: '#ea580c', 5: '#eab308'
                   }[weight];
                   
                   const plateHeight = {
-                    45: 60, 35: 55, 25: 50, 10: 40, 5: 35, 2.5: 30
+                    45: 60, 35: 55, 25: 50, 10: 40, 2.5: 30, 5: 35
                   }[weight];
                   
                   return Array.from({ length: count }).map((_, index) => (
@@ -449,11 +532,11 @@ export default function SetInputForm({ onSubmit, previousSets, barWeight = 45, e
                   const weight = parseFloat(plateWeight);
                   const plateColor = {
                     45: '#dc2626', 35: '#16a34a', 25: '#2563eb',
-                    10: '#4b5563', 5: '#eab308', 2.5: '#ea580c'
+                    10: '#4b5563', 2.5: '#ea580c', 5: '#eab308'
                   }[weight];
                   
                   const plateHeight = {
-                    45: 60, 35: 55, 25: 50, 10: 40, 5: 35, 2.5: 30
+                    45: 60, 35: 55, 25: 50, 10: 40, 2.5: 30, 5: 35
                   }[weight];
                   
                   return Array.from({ length: count }).map((_, index) => (
@@ -485,10 +568,10 @@ export default function SetInputForm({ onSubmit, previousSets, barWeight = 45, e
               <div className="flex gap-3 justify-center flex-wrap">
                 {Object.entries({
                   45: '#dc2626', 35: '#16a34a', 25: '#2563eb',
-                  10: '#4b5563', 5: '#eab308', 2.5: '#ea580c'
+                  10: '#4b5563', 2.5: '#ea580c', 5: '#eab308'
                 }).map(([weight, color]) => {
                   const plateHeight = {
-                    45: 50, 35: 46, 25: 42, 10: 34, 5: 30, 2.5: 26
+                    45: 50, 35: 46, 25: 42, 10: 34, 2.5: 26, 5: 30
                   }[parseFloat(weight)];
                   
                   return (

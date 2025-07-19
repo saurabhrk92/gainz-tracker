@@ -205,9 +205,9 @@ export class IndexedDBService {
     this.ensureDb();
     const workouts = await this.getWorkouts();
     
-    // Find the most recent completed workout that contains this exercise
+    // Find the most recent workout (completed or ended early) that contains this exercise
     const workoutWithExercise = workouts.find(workout => 
-      workout.status === 'completed' && 
+      (workout.status === 'completed' || workout.status === 'ended_early') && 
       workout.exercises.some(ex => ex.exerciseId === exerciseId && ex.sets.length > 0)
     );
     
