@@ -4,6 +4,7 @@ import './globals.css';
 import AuthProvider from '@/lib/auth/AuthProvider';
 import PageTransition from './components/layout/PageTransition';
 import AppShell from './components/layout/AppShell';
+import WorkoutPersistenceProvider from './components/workout/WorkoutPersistenceProvider';
 
 const inter = Inter({ subsets: ['latin'] });
 
@@ -35,11 +36,13 @@ export default function RootLayout({
     <html lang="en">
       <body className={inter.className}>
         <AuthProvider>
-          <AppShell>
-            <PageTransition>
-              {children}
-            </PageTransition>
-          </AppShell>
+          <WorkoutPersistenceProvider>
+            <AppShell>
+              <PageTransition>
+                {children}
+              </PageTransition>
+            </AppShell>
+          </WorkoutPersistenceProvider>
         </AuthProvider>
       </body>
     </html>

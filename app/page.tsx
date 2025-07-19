@@ -3,25 +3,29 @@
 import { useState, useEffect } from 'react';
 import Card from './components/ui/Card';
 import Button from './components/ui/Button';
+import WorkoutModal from './components/workout/WorkoutModal';
 import { formatDate } from '@/lib/utils';
 import { WorkoutTemplate, WorkoutSession } from '@/lib/types';
 import { getDB } from '@/lib/storage/indexedDB';
 import { seedSampleData } from '@/lib/seed-data';
 import { useSync } from '@/lib/hooks/useSync';
 import { useAuth } from '@/lib/auth/useAuth';
+import { MUSCLE_GROUPS } from '@/lib/constants';
 
 export default function HomePage() {
   const { isAuthenticated } = useAuth();
   const { syncStatus, lastSyncTime } = useSync();
   const [todayTemplate, setTodayTemplate] = useState<WorkoutTemplate | null>(null);
+  const [todayExercises, setTodayExercises] = useState<Array<{id: string; name: string; muscleGroup: string}>>([]);
   const [activeWorkout, setActiveWorkout] = useState<WorkoutSession | null>(null);
   const [recentWorkouts, setRecentWorkouts] = useState<WorkoutSession[]>([]);
   const [stats, setStats] = useState({
-    streak: 0,
-    lastWorkout: null as { exercise: string; weight: number } | null,
+    lastPR: null as { exercise: string; weight: number; date: Date } | null,
     weeklyVolume: 0,
   });
   const [loading, setLoading] = useState(true);
+  const [showWorkoutModal, setShowWorkoutModal] = useState(false);
+  const [workoutModalProps, setWorkoutModalProps] = useState<{ templateId?: string; workoutId?: string }>({});
 
   useEffect(() => {
     // Seed sample data on first load
@@ -29,6 +33,55 @@ export default function HomePage() {
       loadHomeData();
     });
   }, []);
+
+  const calculateStats = async (db: any, workouts: WorkoutSession[]) => {
+    try {
+      // Calculate weekly volume (lbs * reps)
+      const weeklyVolume = workouts.reduce((total, workout) => {
+        return total + workout.exercises.reduce((workoutTotal, exercise) => {
+          return workoutTotal + exercise.sets.reduce((exerciseTotal, set) => {
+            return exerciseTotal + (set.weight * set.reps);
+          }, 0);
+        }, 0);
+      }, 0);
+
+      // Find the last PR (highest weight for any exercise)
+      let lastPR: { exercise: string; weight: number; date: Date } | null = null;
+      
+      // Get all workouts from the last 30 days to find recent PRs
+      const thirtyDaysAgo = new Date();
+      thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
+      const recentWorkouts = await db.getWorkouts(thirtyDaysAgo, new Date());
+      
+      for (const workout of recentWorkouts) {
+        for (const workoutExercise of workout.exercises) {
+          const exercise = await db.getExerciseById(workoutExercise.exerciseId);
+          if (!exercise) continue;
+          
+          for (const set of workoutExercise.sets) {
+            if (!lastPR || set.weight > lastPR.weight) {
+              lastPR = {
+                exercise: exercise.name,
+                weight: set.weight,
+                date: new Date(workout.date)
+              };
+            }
+          }
+        }
+      }
+
+      setStats({
+        lastPR,
+        weeklyVolume
+      });
+    } catch (error) {
+      console.error('Failed to calculate stats:', error);
+      setStats({
+        lastPR: null,
+        weeklyVolume: 0
+      });
+    }
+  };
 
   const loadHomeData = async () => {
     try {
@@ -77,6 +130,23 @@ export default function HomePage() {
       const template = await db.getTemplateByDay(dayOfWeek as any);
       setTodayTemplate(template);
       
+      // If template exists, fetch the actual exercise names
+      if (template && template.exercises.length > 0) {
+        const exerciseDetails = await Promise.all(
+          template.exercises.map(async (templateEx) => {
+            const exercise = await db.getExerciseById(templateEx.exerciseId);
+            return {
+              id: templateEx.exerciseId,
+              name: exercise?.name || 'Unknown Exercise',
+              muscleGroup: exercise?.muscleGroup || 'chest'
+            };
+          })
+        );
+        setTodayExercises(exerciseDetails);
+      } else {
+        setTodayExercises([]);
+      }
+      
       // Get recent workouts (exclude active workout from recent list)
       const oneWeekAgo = new Date();
       oneWeekAgo.setDate(oneWeekAgo.getDate() - 7);
@@ -84,13 +154,8 @@ export default function HomePage() {
       const filteredWorkouts = workouts.filter(w => w.status !== 'in_progress');
       setRecentWorkouts(filteredWorkouts.slice(0, 3));
       
-      // Calculate stats
-      // This is simplified - you'd calculate real stats from workout data
-      setStats({
-        streak: 7,
-        lastWorkout: { exercise: 'Bench Press', weight: 185 },
-        weeklyVolume: 12500,
-      });
+      // Calculate real stats from workout data
+      await calculateStats(db, workouts);
     } catch (error) {
       console.error('Failed to load home data:', error);
     } finally {
@@ -100,14 +165,23 @@ export default function HomePage() {
 
   const startWorkout = () => {
     if (todayTemplate) {
-      window.location.href = `/workout?templateId=${todayTemplate.id}`;
+      setWorkoutModalProps({ templateId: todayTemplate.id });
+      setShowWorkoutModal(true);
     }
   };
 
   const resumeWorkout = () => {
     if (activeWorkout) {
-      window.location.href = `/workout?workoutId=${activeWorkout.id}`;
+      setWorkoutModalProps({ workoutId: activeWorkout.id });
+      setShowWorkoutModal(true);
     }
+  };
+
+  const handleWorkoutModalClose = () => {
+    setShowWorkoutModal(false);
+    setWorkoutModalProps({});
+    // Refresh the home data to update active workout status
+    loadHomeData();
   };
 
   const today = new Date();
@@ -160,26 +234,30 @@ export default function HomePage() {
       {/* Main Content */}
       <main className="space-y-6">
         {/* Quick Stats */}
-        <div className="grid grid-cols-3 gap-3">
-          <Card variant="gradient" gradient="primary" className="text-center">
-            <div className="text-xl font-bold">{stats.streak}</div>
-            <div className="text-xs opacity-90 font-medium mt-1">Day Streak</div>
-          </Card>
-          
+        <div className="grid grid-cols-2 gap-4">
           <Card variant="gradient" gradient="secondary" className="text-center">
             <div className="text-xl font-bold">
-              {stats.lastWorkout ? `${stats.lastWorkout.weight}` : 'N/A'}
+              {stats.lastPR ? `${stats.lastPR.weight} lbs` : 'No PR'}
             </div>
             <div className="text-xs opacity-90 font-medium mt-1">
-              {stats.lastWorkout ? 'Last PR' : 'No PR'}
+              {stats.lastPR ? stats.lastPR.exercise : 'Set a PR!'}
             </div>
+            {stats.lastPR && (
+              <div className="text-xs opacity-75 mt-0.5">
+                {formatDate(stats.lastPR.date, 'MMM d')}
+              </div>
+            )}
           </Card>
           
           <Card variant="gradient" gradient="accent" className="text-center">
             <div className="text-xl font-bold text-gray-900">
-              {(stats.weeklyVolume / 1000).toFixed(1)}k
+              {stats.weeklyVolume >= 1000 
+                ? `${(stats.weeklyVolume / 1000).toFixed(1)}k` 
+                : stats.weeklyVolume.toLocaleString()
+              }
             </div>
             <div className="text-xs text-gray-600 font-medium mt-1">Weekly Volume</div>
+            <div className="text-xs text-gray-500 mt-0.5">lbs × reps</div>
           </Card>
         </div>
 
@@ -234,15 +312,20 @@ export default function HomePage() {
             </div>
             
             <div className="bg-gray-50 rounded-lg p-3 space-y-2">
-              {todayTemplate.exercises.slice(0, 3).map((exercise, index) => (
-                <div key={index} className="flex items-center gap-3">
-                  <div className="w-6 h-6 bg-purple-100 rounded-full flex items-center justify-center">
-                    <span className="text-purple-600 font-bold text-xs">{index + 1}</span>
+              {todayExercises.slice(0, 3).map((exercise, index) => {
+                const templateEx = todayTemplate.exercises[index];
+                const muscleGroupInfo = MUSCLE_GROUPS[exercise.muscleGroup as keyof typeof MUSCLE_GROUPS] || MUSCLE_GROUPS.chest;
+                
+                return (
+                  <div key={exercise.id} className="flex items-center gap-3">
+                    <div className="w-6 h-6 rounded-full flex items-center justify-center text-xs">
+                      {muscleGroupInfo.emoji}
+                    </div>
+                    <span className="font-medium text-gray-900 text-sm flex-1">{exercise.name}</span>
+                    <span className="text-purple-600 font-semibold text-sm">{templateEx.targetSets} sets</span>
                   </div>
-                  <span className="font-medium text-gray-900 text-sm flex-1">Exercise {index + 1}</span>
-                  <span className="text-purple-600 font-semibold text-sm">{exercise.targetSets} sets</span>
-                </div>
-              ))}
+                );
+              })}
               {todayTemplate.exercises.length > 3 && (
                 <div className="flex items-center gap-3 text-gray-500 pl-9">
                   <span className="text-xs font-medium">+{todayTemplate.exercises.length - 3} more exercises</span>
@@ -337,6 +420,14 @@ export default function HomePage() {
           </div>
         </div>
       </main>
+
+      {/* Workout Modal */}
+      <WorkoutModal
+        isOpen={showWorkoutModal}
+        onClose={handleWorkoutModalClose}
+        templateId={workoutModalProps.templateId}
+        workoutId={workoutModalProps.workoutId}
+      />
     </div>
   );
 }
