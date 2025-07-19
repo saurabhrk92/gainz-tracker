@@ -1,0 +1,39 @@
+{
+  "name": "Gainz Tracker - Weight Lifting Progress",
+  "short_name": "Gainz Tracker",
+  "description": "Track your weight lifting progress with advanced analytics",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#ffffff",
+  "theme_color": "#667eea",
+  "orientation": "portrait-primary",
+  "icons": [
+    {
+      "src": "/icons/icon-192x192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "/icons/icon-512x512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ],
+  "categories": ["fitness", "health", "productivity"],
+  "screenshots": [
+    {
+      "src": "/screenshots/home.png",
+      "sizes": "1080x1920",
+      "type": "image/png",
+      "label": "Home Screen"
+    },
+    {
+      "src": "/screenshots/workout.png",
+      "sizes": "1080x1920",
+      "type": "image/png",
+      "label": "Workout Session"
+    }
+  ]
+}
