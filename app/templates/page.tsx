@@ -44,16 +44,30 @@ export default function TemplatesPage() {
   };
 
   const handleDeleteTemplate = async (templateId: string) => {
-    const confirmed = confirm('Are you sure you want to delete this template?');
-    if (!confirmed) return;
-
     try {
       const db = await getDB();
+      
+      // Check if this template has been used in any workouts
+      const workouts = await db.getWorkouts();
+      const usedInWorkouts = workouts.filter(workout => workout.templateId === templateId);
+      
+      let confirmMessage = 'Are you sure you want to delete this template?';
+      if (usedInWorkouts.length > 0) {
+        confirmMessage = `This template has been used in ${usedInWorkouts.length} workout(s). Deleting it will not affect your workout history, but you won't be able to use this template again. Are you sure you want to delete it?`;
+      }
+      
+      const confirmed = confirm(confirmMessage);
+      if (!confirmed) return;
+
+      console.log('Attempting to delete template:', templateId);
       await db.deleteTemplate(templateId);
+      console.log('Template deleted successfully');
+      
       loadTemplates(); // Refresh the list
+      alert('Template deleted successfully!');
     } catch (error) {
       console.error('Failed to delete template:', error);
-      alert('Failed to delete template. Please try again.');
+      alert(`Failed to delete template: ${error instanceof Error ? error.message : 'Unknown error'}. Please try again.`);
     }
   };
 
