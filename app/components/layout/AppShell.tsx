@@ -31,8 +31,10 @@ export default function AppShell({ children }: AppShellProps) {
       )}
       
       {/* Main content */}
-      <main className={`${!hideNavigation ? 'pb-28' : ''}`}>
-        {children}
+      <main className={`${!hideNavigation ? 'pb-32' : ''} min-h-screen`}>
+        <div className="px-4 py-4 max-w-md mx-auto">
+          {children}
+        </div>
       </main>
       
       {/* Navigation */}

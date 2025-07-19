@@ -71,18 +71,17 @@ export default function ExercisesPage() {
   return (
     <div className="flex flex-col min-h-screen bg-gray-50">
       {/* Header */}
-      <header className="bg-gradient-primary text-white p-6 safe-top relative overflow-hidden">
-        <div className="relative z-10">
-          <h1 className="text-3xl font-bold font-display">💪 Exercise Library</h1>
-          <p className="text-white/90 mt-2">Build your perfect exercise collection</p>
+      <header className="bg-gradient-primary text-white p-4 safe-top relative overflow-hidden rounded-b-3xl mb-4 mx-[-16px] mt-[-16px]">
+        <div className="relative z-10 px-2">
+          <h1 className="text-xl font-bold font-display">💪 Exercise Library</h1>
+          <p className="text-white/90 mt-1 text-sm">Build your perfect exercise collection</p>
         </div>
         {/* Decorative elements */}
-        <div className="absolute top-0 right-0 w-32 h-32 bg-white/10 rounded-full -translate-y-8 translate-x-8"></div>
-        <div className="absolute bottom-0 left-0 w-24 h-24 bg-white/5 rounded-full translate-y-4 -translate-x-4"></div>
+        <div className="absolute top-0 right-0 w-20 h-20 bg-white/10 rounded-full -translate-y-6 translate-x-6 pointer-events-none"></div>
       </header>
 
       {/* Main Content */}
-      <main className="flex-1 p-4 space-y-6">
+      <main className="flex-1 space-y-6">
         {/* Actions */}
         <div className="space-y-4">
           <Button 
@@ -114,11 +113,11 @@ export default function ExercisesPage() {
           
           {/* Muscle Group Filter */}
           <div>
-            <h3 className="text-lg font-bold text-gray-700 mb-4 font-display">Filter by Muscle Group</h3>
+            <h3 className="text-base font-bold text-gray-700 mb-3 font-display">Filter by Muscle Group</h3>
             <div className="flex gap-3 overflow-x-auto scrollbar-hide pb-2">
               <button
                 onClick={() => setSelectedMuscleGroup('all')}
-                className={`px-6 py-3 rounded-2xl whitespace-nowrap font-semibold transition-all duration-200 transform hover:scale-105 ${
+                className={`px-4 py-3 rounded-2xl whitespace-nowrap font-semibold transition-all duration-200 transform hover:scale-105 min-h-[44px] ${
                   selectedMuscleGroup === 'all'
                     ? 'bg-gradient-primary text-white shadow-lg'
                     : 'bg-white/95 backdrop-blur-md text-gray-700 border border-white/20 shadow-lg hover:bg-white'

@@ -20,7 +20,7 @@ export default function Card({
   onClick,
   style,
 }: CardProps) {
-  const baseClasses = 'rounded-3xl p-6 transition-all duration-200 border border-gray-100/50';
+  const baseClasses = 'rounded-3xl p-4 md:p-6 transition-all duration-200 border border-gray-100/50';
   
   const variants = {
     default: 'bg-white/95 backdrop-blur-md shadow-lg hover:shadow-xl',

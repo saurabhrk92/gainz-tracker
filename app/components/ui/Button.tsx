@@ -29,9 +29,9 @@ export default function Button({
   };
   
   const sizes = {
-    sm: 'py-2 px-4 text-sm',
-    md: 'py-3 px-6 text-base',
-    lg: 'py-4 px-8 text-lg font-bold',
+    sm: 'py-3 px-4 text-sm min-h-[44px]',
+    md: 'py-4 px-6 text-base min-h-[48px]',
+    lg: 'py-5 px-8 text-lg font-bold min-h-[56px]',
   };
   
   return (

@@ -102,20 +102,19 @@ export default function TemplatesPage() {
   }
 
   return (
-    <div className="flex flex-col min-h-screen bg-gray-50">
+    <div className="min-h-screen">
       {/* Header */}
-      <header className="bg-gradient-primary text-white p-6 safe-top relative overflow-hidden">
-        <div className="relative z-10">
-          <h1 className="text-3xl font-bold font-display">📋 Workout Templates</h1>
-          <p className="text-white/90 mt-2">Design your perfect workout routines</p>
+      <header className="bg-gradient-primary text-white p-4 safe-top relative overflow-hidden rounded-b-3xl mb-4 mx-[-16px] mt-[-16px]">
+        <div className="relative z-10 px-2">
+          <h1 className="text-xl font-bold font-display">📋 Workout Templates</h1>
+          <p className="text-white/90 mt-1 text-sm">Design your perfect workout routines</p>
         </div>
         {/* Decorative elements */}
-        <div className="absolute top-0 right-0 w-32 h-32 bg-white/10 rounded-full -translate-y-8 translate-x-8"></div>
-        <div className="absolute bottom-0 left-0 w-24 h-24 bg-white/5 rounded-full translate-y-4 -translate-x-4"></div>
+        <div className="absolute top-0 right-0 w-20 h-20 bg-white/10 rounded-full -translate-y-6 translate-x-6 pointer-events-none"></div>
       </header>
 
       {/* Main Content */}
-      <main className="flex-1 p-4 space-y-6">
+      <main className="space-y-6">
         {/* Create Button */}
         <Button 
           onClick={() => setShowCreateModal(true)}
@@ -128,7 +127,7 @@ export default function TemplatesPage() {
 
         {/* Templates List */}
         <div>
-          <h2 className="text-2xl font-bold text-gray-800 mb-6 flex items-center gap-2 font-display">
+          <h2 className="text-lg font-bold text-gray-800 mb-4 flex items-center gap-2 font-display">
             🗂️ Your Templates
           </h2>
           <div className="space-y-4">

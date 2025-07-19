@@ -112,21 +112,20 @@ export default function SettingsPage() {
   return (
     <div className="flex flex-col min-h-screen bg-gray-50">
       {/* Header */}
-      <header className="bg-gradient-primary text-white p-6 safe-top relative overflow-hidden">
-        <div className="relative z-10">
-          <h1 className="text-3xl font-bold font-display">⚙️ Settings</h1>
-          <p className="text-white/90 mt-2">Manage your account and data</p>
+      <header className="bg-gradient-primary text-white p-4 safe-top relative overflow-hidden rounded-b-3xl mb-4 mx-[-16px] mt-[-16px]">
+        <div className="relative z-10 px-2">
+          <h1 className="text-xl font-bold font-display">⚙️ Settings</h1>
+          <p className="text-white/90 mt-1 text-sm">Manage your account and data</p>
         </div>
         {/* Decorative elements */}
-        <div className="absolute top-0 right-0 w-32 h-32 bg-white/10 rounded-full -translate-y-8 translate-x-8"></div>
-        <div className="absolute bottom-0 left-0 w-24 h-24 bg-white/5 rounded-full translate-y-4 -translate-x-4"></div>
+        <div className="absolute top-0 right-0 w-20 h-20 bg-white/10 rounded-full -translate-y-6 translate-x-6 pointer-events-none"></div>
       </header>
 
       {/* Main Content */}
-      <main className="flex-1 p-4 space-y-6">
+      <main className="flex-1 space-y-6">
         {/* Account Section */}
         <Card className="relative overflow-hidden transform hover:scale-[1.01] transition-all duration-200">
-          <h2 className="text-2xl font-bold text-gray-800 mb-6 flex items-center gap-2 font-display">👤 Account</h2>
+          <h2 className="text-lg font-bold text-gray-800 mb-4 flex items-center gap-2 font-display">👤 Account</h2>
           
           {isAuthenticated ? (
             <div className="space-y-6">
@@ -181,7 +180,7 @@ export default function SettingsPage() {
         {/* Sync & Backup Section */}
         {isAuthenticated && (
           <Card className="relative overflow-hidden transform hover:scale-[1.01] transition-all duration-200">
-            <h2 className="text-2xl font-bold text-gray-800 mb-6 flex items-center gap-2 font-display">☁️ Sync & Backup</h2>
+            <h2 className="text-lg font-bold text-gray-800 mb-4 flex items-center gap-2 font-display">☁️ Sync & Backup</h2>
             
             {syncStatus && (
               <div className="mb-6 p-4 bg-gradient-to-r from-blue-50 to-cyan-50 border border-blue-200/50 rounded-2xl shadow-sm">
@@ -230,7 +229,7 @@ export default function SettingsPage() {
         {/* Backup History */}
         {isAuthenticated && backups.length > 0 && (
           <Card className="relative overflow-hidden transform hover:scale-[1.01] transition-all duration-200">
-            <h2 className="text-2xl font-bold text-gray-800 mb-6 flex items-center gap-2 font-display">📋 Backup History</h2>
+            <h2 className="text-lg font-bold text-gray-800 mb-4 flex items-center gap-2 font-display">📋 Backup History</h2>
             
             <div className="space-y-4">
               {backups.map((backup, index) => (
@@ -279,7 +278,7 @@ export default function SettingsPage() {
 
         {/* App Info */}
         <Card className="relative overflow-hidden transform hover:scale-[1.01] transition-all duration-200">
-          <h2 className="text-2xl font-bold text-gray-800 mb-6 flex items-center gap-2 font-display">ℹ️ About</h2>
+          <h2 className="text-lg font-bold text-gray-800 mb-4 flex items-center gap-2 font-display">ℹ️ About</h2>
           
           <div className="bg-gradient-to-br from-gray-50 to-gray-100/50 rounded-2xl p-5 space-y-4">
             <div className="space-y-4 text-gray-700">
