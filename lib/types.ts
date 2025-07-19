@@ -18,7 +18,8 @@ export type WeekDay =
   | 'thursday' 
   | 'friday' 
   | 'saturday' 
-  | 'sunday';
+  | 'sunday'
+  | 'routine';
 
 export interface PlateConfig {
   45: number;

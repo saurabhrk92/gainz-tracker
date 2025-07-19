@@ -51,7 +51,7 @@ export function useSync() {
 
     try {
       setSyncStatus('syncing');
-      await syncService.uploadBackup();
+      await syncService.uploadBackup('manual');
       setLastSyncTime(new Date());
       setSyncStatus('success');
     } catch (error) {
@@ -61,11 +61,25 @@ export function useSync() {
     }
   };
 
+  const syncWorkoutEvent = async (triggerReason: string) => {
+    if (!syncService) return;
+
+    try {
+      // Don't update UI status for background workout syncs
+      await syncService.syncWorkoutEvent(triggerReason);
+      setLastSyncTime(new Date());
+    } catch (error) {
+      console.error('Workout sync failed:', error);
+      // Don't throw - workout sync should fail silently
+    }
+  };
+
   return {
     syncService,
     lastSyncTime,
     syncStatus,
     manualSync,
+    syncWorkoutEvent,
     isAuthenticated,
   };
 }

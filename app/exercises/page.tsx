@@ -19,6 +19,8 @@ export default function ExercisesPage() {
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedMuscleGroup, setSelectedMuscleGroup] = useState<MuscleGroup | 'all'>('all');
   const [showCreateModal, setShowCreateModal] = useState(false);
+  const [showEditModal, setShowEditModal] = useState(false);
+  const [editingExercise, setEditingExercise] = useState<Exercise | null>(null);
 
   useEffect(() => {
     loadExercises();
@@ -58,6 +60,17 @@ export default function ExercisesPage() {
 
   const handleExerciseCreated = () => {
     setShowCreateModal(false);
+    loadExercises(); // Refresh the list
+  };
+
+  const handleEditClick = (exercise: Exercise) => {
+    setEditingExercise(exercise);
+    setShowEditModal(true);
+  };
+
+  const handleExerciseUpdated = () => {
+    setShowEditModal(false);
+    setEditingExercise(null);
     loadExercises(); // Refresh the list
   };
 
@@ -205,7 +218,7 @@ export default function ExercisesPage() {
                       <Button
                         variant="glass"
                         size="sm"
-                        onClick={() => window.location.href = `/exercises/${exercise.id}/edit`}
+                        onClick={() => handleEditClick(exercise)}
                         className="ml-3"
                       >
                         Edit
@@ -258,6 +271,26 @@ export default function ExercisesPage() {
         <ExerciseForm
           onSuccess={handleExerciseCreated}
           onCancel={() => setShowCreateModal(false)}
+        />
+      </Modal>
+
+      {/* Edit Exercise Modal */}
+      <Modal
+        isOpen={showEditModal}
+        onClose={() => {
+          setShowEditModal(false);
+          setEditingExercise(null);
+        }}
+        title="Edit Exercise"
+        size="lg"
+      >
+        <ExerciseForm
+          exercise={editingExercise || undefined}
+          onSuccess={handleExerciseUpdated}
+          onCancel={() => {
+            setShowEditModal(false);
+            setEditingExercise(null);
+          }}
         />
       </Modal>
     </div>

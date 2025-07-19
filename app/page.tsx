@@ -3,7 +3,9 @@
 import { useState, useEffect } from 'react';
 import Card from './components/ui/Card';
 import Button from './components/ui/Button';
+import Modal from './components/ui/Modal';
 import WorkoutModal from './components/workout/WorkoutModal';
+import WorkoutDetailsModal from './components/workout/WorkoutDetailsModal';
 import { formatDate } from '@/lib/utils';
 import { WorkoutTemplate, WorkoutSession } from '@/lib/types';
 import { getDB } from '@/lib/storage/indexedDB';
@@ -27,6 +29,10 @@ export default function HomePage() {
   const [loading, setLoading] = useState(true);
   const [showWorkoutModal, setShowWorkoutModal] = useState(false);
   const [workoutModalProps, setWorkoutModalProps] = useState<{ templateId?: string; workoutId?: string }>({});
+  const [routineTemplates, setRoutineTemplates] = useState<WorkoutTemplate[]>([]);
+  const [showRoutineSelector, setShowRoutineSelector] = useState(false);
+  const [showWorkoutDetails, setShowWorkoutDetails] = useState(false);
+  const [selectedWorkoutId, setSelectedWorkoutId] = useState<string | null>(null);
 
   useEffect(() => {
     // Seed sample data on first load
@@ -162,6 +168,11 @@ export default function HomePage() {
       });
       setRecentWorkouts(sortedWorkouts.slice(0, 3));
       
+      // Load routine templates for routine selector
+      const allTemplates = await db.getTemplates();
+      const routines = allTemplates.filter(t => t.day === 'routine');
+      setRoutineTemplates(routines);
+      
       // Calculate real stats from workout data
       await calculateStats(db, workouts);
     } catch (error) {
@@ -190,6 +201,26 @@ export default function HomePage() {
     setWorkoutModalProps({});
     // Refresh the home data to update active workout status
     loadHomeData();
+  };
+
+  const openRoutineSelector = () => {
+    setShowRoutineSelector(true);
+  };
+
+  const startRoutineWorkout = (templateId: string) => {
+    setShowRoutineSelector(false);
+    setWorkoutModalProps({ templateId });
+    setShowWorkoutModal(true);
+  };
+
+  const openWorkoutDetails = (workoutId: string) => {
+    setSelectedWorkoutId(workoutId);
+    setShowWorkoutDetails(true);
+  };
+
+  const closeWorkoutDetails = () => {
+    setShowWorkoutDetails(false);
+    setSelectedWorkoutId(null);
   };
 
   const today = new Date();
@@ -346,13 +377,25 @@ export default function HomePage() {
               )}
             </div>
             
-            <Button 
-              onClick={startWorkout}
-              className="w-full"
-              size="lg"
-            >
-              Start Workout
-            </Button>
+            <div className="grid grid-cols-2 gap-3">
+              <Button 
+                onClick={startWorkout}
+                className="w-full"
+                size="lg"
+              >
+                Start Workout
+              </Button>
+              {routineTemplates.length > 0 && (
+                <Button 
+                  onClick={openRoutineSelector}
+                  variant="secondary"
+                  className="w-full"
+                  size="lg"
+                >
+                  Run Different Routine
+                </Button>
+              )}
+            </div>
           </Card>
         ) : (
           <Card className="text-center py-8">
@@ -361,13 +404,22 @@ export default function HomePage() {
             </div>
             <h3 className="text-lg font-bold text-black mb-2">Rest Day</h3>
             <p className="text-gray-600 text-sm mb-4">No workout scheduled for today</p>
-            <Button 
-              onClick={() => window.location.href = '/templates'}
-              variant="secondary"
-              size="md"
-            >
-              Create Template
-            </Button>
+            {routineTemplates.length > 0 ? (
+              <Button 
+                onClick={openRoutineSelector}
+                size="md"
+              >
+                Run Routine Workout
+              </Button>
+            ) : (
+              <Button 
+                onClick={() => window.location.href = '/templates'}
+                variant="secondary"
+                size="md"
+              >
+                Create Template
+              </Button>
+            )}
           </Card>
         )}
 
@@ -387,7 +439,7 @@ export default function HomePage() {
                       setShowWorkoutModal(true);
                     } else {
                       // View completed workout details
-                      window.location.href = `/history/${workout.id}`;
+                      openWorkoutDetails(workout.id);
                     }
                   }}
                 >
@@ -454,6 +506,92 @@ export default function HomePage() {
         onClose={handleWorkoutModalClose}
         templateId={workoutModalProps.templateId}
         workoutId={workoutModalProps.workoutId}
+      />
+
+      {/* Routine Selector Modal */}
+      <Modal 
+        isOpen={showRoutineSelector} 
+        onClose={() => setShowRoutineSelector(false)} 
+        title="Select Routine Workout"
+      >
+        <div className="space-y-4">
+          <p className="text-gray-600 text-sm">
+            Choose a routine workout to start today:
+          </p>
+          
+          <div className="space-y-3">
+            {routineTemplates.map((template) => (
+              <div
+                key={template.id}
+                onClick={() => startRoutineWorkout(template.id)}
+                className="p-4 border border-gray-200 rounded-lg hover:bg-gray-50 cursor-pointer transition-colors"
+              >
+                <div className="flex justify-between items-start">
+                  <div>
+                    <h3 className="font-semibold text-gray-900">{template.name}</h3>
+                    <p className="text-sm text-gray-600 mt-1">
+                      {template.exercises.length} exercises
+                    </p>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <div className="w-6 h-6 rounded-full bg-gradient-primary flex items-center justify-center">
+                      <UIIcon name="workout" size={14} color="white" />
+                    </div>
+                  </div>
+                </div>
+                
+                {template.exercises.length > 0 && (
+                  <div className="mt-3 text-xs text-gray-500">
+                    {template.exercises.slice(0, 3).map((ex, idx) => (
+                      <span key={idx}>
+                        {idx > 0 && ' • '}
+                        {ex.targetSets} sets
+                      </span>
+                    ))}
+                    {template.exercises.length > 3 && ` • +${template.exercises.length - 3} more`}
+                  </div>
+                )}
+              </div>
+            ))}
+          </div>
+          
+          {routineTemplates.length === 0 && (
+            <div className="text-center py-8">
+              <UIIcon name="workout" size={48} color="#9CA3AF" />
+              <h3 className="text-lg font-bold text-black mb-2 mt-4">No Routine Workouts</h3>
+              <p className="text-gray-600 text-sm mb-4">
+                Create a routine workout template to use any day
+              </p>
+              <Button 
+                onClick={() => {
+                  setShowRoutineSelector(false);
+                  window.location.href = '/templates';
+                }}
+                variant="secondary"
+                size="sm"
+              >
+                Create Routine Template
+              </Button>
+            </div>
+          )}
+          
+          <div className="flex gap-3 pt-4">
+            <Button
+              onClick={() => setShowRoutineSelector(false)}
+              variant="secondary"
+              className="flex-1"
+            >
+              Cancel
+            </Button>
+          </div>
+        </div>
+      </Modal>
+
+      {/* Workout Details Modal */}
+      <WorkoutDetailsModal
+        isOpen={showWorkoutDetails}
+        onClose={closeWorkoutDetails}
+        workoutId={selectedWorkoutId}
       />
     </div>
   );

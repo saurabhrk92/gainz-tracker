@@ -58,7 +58,7 @@ export default function SettingsPage() {
     try {
       setLoading(true);
       setSyncStatus('Creating backup...');
-      await syncService.uploadBackup();
+      await syncService.uploadBackup('manual');
       setSyncStatus('Backup created successfully!');
       await loadBackups();
     } catch (error) {

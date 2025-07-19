@@ -19,6 +19,7 @@ export const WEEK_DAYS = [
   { value: 'friday', label: 'Friday' },
   { value: 'saturday', label: 'Saturday' },
   { value: 'sunday', label: 'Sunday' },
+  { value: 'routine', label: 'Routine (Any Day)' },
 ] as const;
 
 export const EQUIPMENT_TYPES = [

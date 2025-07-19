@@ -7,6 +7,7 @@ import { MUSCLE_GROUPS, WEEK_DAYS } from '@/lib/constants';
 import Button from '../ui/Button';
 import Card from '../ui/Card';
 import { UIIcon, ActionIcon, MuscleGroupIcon } from '../ui/Icon';
+import { useSync } from '@/lib/hooks/useSync';
 
 interface TemplateFormProps {
   template?: WorkoutTemplate;
@@ -22,6 +23,7 @@ interface TemplateExercise {
 }
 
 export default function TemplateForm({ template, onSuccess, onCancel }: TemplateFormProps) {
+  const { syncWorkoutEvent } = useSync();
   const [name, setName] = useState(template?.name || '');
   const [muscleGroup, setMuscleGroup] = useState<MuscleGroup | 'full_body'>(template?.muscleGroup || 'chest');
   const [day, setDay] = useState<WeekDay>(template?.day || 'monday');
@@ -93,8 +95,10 @@ export default function TemplateForm({ template, onSuccess, onCancel }: Template
 
       if (template) {
         await db.updateTemplate(template.id, templateData);
+        syncWorkoutEvent('workout_template_modified');
       } else {
         await db.createTemplate(templateData);
+        syncWorkoutEvent('workout_template_modified');
       }
 
       onSuccess(templateData);

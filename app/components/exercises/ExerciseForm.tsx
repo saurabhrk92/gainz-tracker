@@ -10,16 +10,17 @@ import { generateId } from '@/lib/utils';
 interface ExerciseFormProps {
   onSuccess: () => void;
   onCancel: () => void;
+  exercise?: Exercise; // Optional: if provided, we're editing
 }
 
-export default function ExerciseForm({ onSuccess, onCancel }: ExerciseFormProps) {
+export default function ExerciseForm({ onSuccess, onCancel, exercise }: ExerciseFormProps) {
   const [loading, setLoading] = useState(false);
   const [formData, setFormData] = useState({
-    name: '',
-    muscleGroup: 'chest' as MuscleGroup,
-    type: 'barbell' as EquipmentType,
-    barWeight: 45,
-    defaultRestTime: 180,
+    name: exercise?.name || '',
+    muscleGroup: exercise?.muscleGroup || 'chest' as MuscleGroup,
+    type: exercise?.type || 'barbell' as EquipmentType,
+    barWeight: exercise?.barWeight || 45,
+    defaultRestTime: exercise?.defaultRestTime || 180,
   });
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -27,24 +28,39 @@ export default function ExerciseForm({ onSuccess, onCancel }: ExerciseFormProps)
     setLoading(true);
 
     try {
-      const exercise: Exercise = {
-        id: generateId(),
-        name: formData.name,
-        muscleGroup: formData.muscleGroup,
-        type: formData.type,
-        barWeight: formData.type === 'barbell' ? formData.barWeight : undefined,
-        defaultRestTime: formData.defaultRestTime,
-        created: new Date(),
-        lastUsed: new Date(),
-      };
-
       const db = await getDB();
-      await db.createExercise(exercise);
+      
+      if (exercise) {
+        // Editing existing exercise
+        const updates = {
+          name: formData.name,
+          muscleGroup: formData.muscleGroup,
+          type: formData.type,
+          barWeight: formData.type === 'barbell' ? formData.barWeight : undefined,
+          defaultRestTime: formData.defaultRestTime,
+        };
+        
+        await db.updateExercise(exercise.id, updates);
+      } else {
+        // Creating new exercise
+        const newExercise: Exercise = {
+          id: generateId(),
+          name: formData.name,
+          muscleGroup: formData.muscleGroup,
+          type: formData.type,
+          barWeight: formData.type === 'barbell' ? formData.barWeight : undefined,
+          defaultRestTime: formData.defaultRestTime,
+          created: new Date(),
+          lastUsed: new Date(),
+        };
+        
+        await db.createExercise(newExercise);
+      }
       
       onSuccess();
     } catch (error) {
-      console.error('Failed to create exercise:', error);
-      alert('Failed to create exercise. Please try again.');
+      console.error(`Failed to ${exercise ? 'update' : 'create'} exercise:`, error);
+      alert(`Failed to ${exercise ? 'update' : 'create'} exercise. Please try again.`);
     } finally {
       setLoading(false);
     }
@@ -181,7 +197,7 @@ export default function ExerciseForm({ onSuccess, onCancel }: ExerciseFormProps)
           disabled={loading || !formData.name.trim()}
           className="flex-1 bg-purple-600 hover:bg-purple-700 text-white font-medium py-3 rounded-lg disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
         >
-          {loading ? 'Creating...' : 'Create Exercise'}
+          {loading ? (exercise ? 'Updating...' : 'Creating...') : (exercise ? 'Update Exercise' : 'Create Exercise')}
         </button>
       </div>
     </form>

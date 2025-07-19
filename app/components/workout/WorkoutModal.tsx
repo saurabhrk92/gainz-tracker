@@ -14,6 +14,7 @@ import Button from '../ui/Button';
 import Card from '../ui/Card';
 import Modal from '../ui/Modal';
 import { MuscleGroupIcon, ActionIcon } from '../ui/Icon';
+import { useSync } from '@/lib/hooks/useSync';
 
 interface WorkoutModalProps {
   isOpen: boolean;
@@ -24,6 +25,7 @@ interface WorkoutModalProps {
 
 export default function WorkoutModal({ isOpen, onClose, templateId, workoutId }: WorkoutModalProps) {
   const router = useRouter();
+  const { syncWorkoutEvent } = useSync();
   
   const [template, setTemplate] = useState<WorkoutTemplate | null>(null);
   const [exercises, setExercises] = useState<Exercise[]>([]);
@@ -38,12 +40,63 @@ export default function WorkoutModal({ isOpen, onClose, templateId, workoutId }:
   const [currentWeight, setCurrentWeight] = useState(0);
   const [isProgressing, setIsProgressing] = useState(false);
   const [workoutSessionId, setWorkoutSessionId] = useState<string | null>(null);
+  const [totalSetsLogged, setTotalSetsLogged] = useState(0);
+  const [lastSetTime, setLastSetTime] = useState<Date | null>(null);
+  const [timeoutWarningShown, setTimeoutWarningShown] = useState(false);
 
   useEffect(() => {
     if (isOpen && (templateId || workoutId)) {
       loadWorkoutData();
     }
   }, [isOpen, templateId, workoutId]);
+
+  // Auto-timeout workout after 60 minutes of inactivity
+  useEffect(() => {
+    if (!isOpen || !workoutSessionId || !lastSetTime) return;
+
+    const TIMEOUT_MINUTES = 60;
+    const checkInterval = setInterval(async () => {
+      const now = new Date();
+      const minutesSinceLastSet = (now.getTime() - lastSetTime.getTime()) / (1000 * 60);
+
+      if (minutesSinceLastSet >= TIMEOUT_MINUTES) {
+        console.log(`Auto-ending workout after ${TIMEOUT_MINUTES} minutes of inactivity`);
+        
+        try {
+          const db = await getDB();
+          
+          // Calculate volume for completed sets
+          const totalVolume = Object.values(sets).reduce((total, exerciseSets) => {
+            return total + exerciseSets.reduce((exTotal, set) => exTotal + (set.reps * set.weight), 0);
+          }, 0);
+          
+          // Auto-end workout as ended_early
+          await db.updateWorkout(workoutSessionId, {
+            status: 'ended_early',
+            duration: Math.floor((now.getTime() - workoutStartTime!.getTime()) / 1000),
+            totalVolume
+          });
+          
+          // Clean up timer localStorage data
+          const storageKey = `workout_timer_${workoutSessionId}`;
+          localStorage.removeItem(storageKey);
+          
+          // Sync auto-ended workout
+          syncWorkoutEvent('workout_auto_timeout');
+          
+          alert('Workout automatically ended due to 60 minutes of inactivity.');
+          onClose();
+          router.push('/history');
+        } catch (error) {
+          console.error('Failed to auto-end workout:', error);
+        }
+        
+        clearInterval(checkInterval);
+      }
+    }, 60000); // Check every minute
+
+    return () => clearInterval(checkInterval);
+  }, [isOpen, workoutSessionId, lastSetTime, sets, workoutStartTime, syncWorkoutEvent, onClose, router]);
 
   const loadWorkoutData = async () => {
     if (!templateId && !workoutId) {
@@ -71,6 +124,7 @@ export default function WorkoutModal({ isOpen, onClose, templateId, workoutId }:
         setTemplate(templateData);
         setWorkoutSessionId(workoutId);
         setWorkoutStartTime(new Date(existingWorkout.date));
+        setLastSetTime(new Date()); // Reset timeout tracking for resumed workout
         setIsWorkoutTimerActive(true);
         
         // Restore existing sets
@@ -115,6 +169,7 @@ export default function WorkoutModal({ isOpen, onClose, templateId, workoutId }:
         setSets(initialSets);
         const startTime = new Date();
         setWorkoutStartTime(startTime);
+        setLastSetTime(startTime); // Initialize timeout tracking
         setIsWorkoutTimerActive(true); // Auto-start the workout timer
         
         // Create workout session in database (but not marked as in_progress yet)
@@ -215,6 +270,15 @@ export default function WorkoutModal({ isOpen, onClose, templateId, workoutId }:
           setIsWorkoutTimerActive(true);
         }
         
+        // Update total sets counter and check for batched sync
+        setTotalSetsLogged(totalSetsLogged);
+        setLastSetTime(new Date()); // Track when the last set was logged
+        
+        if (totalSetsLogged % 10 === 0 && totalSetsLogged > 0) {
+          console.log(`Triggering batched sync after ${totalSetsLogged} sets`);
+          syncWorkoutEvent('sets_batched');
+        }
+        
         console.log('Saved set to database:', { exerciseId, set: newSet, totalSets: updatedSets.length });
       }
     } catch (error) {
@@ -307,6 +371,9 @@ export default function WorkoutModal({ isOpen, onClose, templateId, workoutId }:
       const storageKey = `workout_timer_${workoutSessionId}`;
       localStorage.removeItem(storageKey);
       
+      // Sync completed workout to cloud
+      syncWorkoutEvent('workout_completed');
+      
       console.log('Workout completed:', workoutSessionId);
       onClose();
       router.push('/history');
@@ -343,6 +410,9 @@ export default function WorkoutModal({ isOpen, onClose, templateId, workoutId }:
       // Clean up timer localStorage data
       const storageKey = `workout_timer_${workoutSessionId}`;
       localStorage.removeItem(storageKey);
+      
+      // Sync ended workout to cloud
+      syncWorkoutEvent('workout_ended_early');
       
       console.log('Workout ended early:', workoutSessionId);
       onClose();

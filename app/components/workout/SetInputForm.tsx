@@ -236,7 +236,7 @@ export default function SetInputForm({ onSubmit, previousSets, barWeight = 45, e
       case 'barbell':
         return (
           <div>
-            <label className="block text-sm font-semibold text-gray-700 mb-2 flex items-center gap-2">
+            <label className="block text-sm font-semibold text-gray-700 mb-2 min-h-[40px] flex items-end gap-2">
               <EquipmentIcon name="barbell" size={16} />
               Total Weight (lbs)
             </label>
@@ -272,9 +272,9 @@ export default function SetInputForm({ onSubmit, previousSets, barWeight = 45, e
       case 'dumbbell':
         return (
           <div>
-            <label className="block text-sm font-semibold text-gray-700 mb-2 flex items-center gap-2">
+            <label className="block text-sm font-semibold text-gray-700 mb-2 min-h-[40px] flex items-end gap-2">
               <EquipmentIcon name="dumbbell" size={16} />
-              Dumbbell Weight (lbs per dumbbell)
+              Dumbbell Weight
             </label>
             <div className="flex items-center gap-2">
               <button
@@ -308,7 +308,7 @@ export default function SetInputForm({ onSubmit, previousSets, barWeight = 45, e
       case 'fixed_bar':
         return (
           <div>
-            <label className="block text-sm font-semibold text-gray-700 mb-2 flex items-center gap-2">
+            <label className="block text-sm font-semibold text-gray-700 mb-2 min-h-[40px] flex items-end gap-2">
               <EquipmentIcon name="fixed-bar" size={16} />
               Fixed Bar Weight (lbs)
             </label>
@@ -344,7 +344,7 @@ export default function SetInputForm({ onSubmit, previousSets, barWeight = 45, e
       case 'machine':
         return (
           <div>
-            <label className="block text-sm font-semibold text-gray-700 mb-2 flex items-center gap-2">
+            <label className="block text-sm font-semibold text-gray-700 mb-2 min-h-[40px] flex items-end gap-2">
               <EquipmentIcon name="machine" size={16} />
               Machine Weight (lbs)
             </label>
@@ -380,7 +380,7 @@ export default function SetInputForm({ onSubmit, previousSets, barWeight = 45, e
       case 'bodyweight':
         return (
           <div>
-            <label className="block text-sm font-semibold text-gray-700 mb-2 flex items-center gap-2">
+            <label className="block text-sm font-semibold text-gray-700 mb-2 min-h-[40px] flex items-end gap-2">
               <EquipmentIcon name="dumbbell" size={16} />
               Additional Weight (lbs)
             </label>
@@ -452,7 +452,7 @@ export default function SetInputForm({ onSubmit, previousSets, barWeight = 45, e
         {/* Input Fields */}
         <div className="grid grid-cols-2 gap-4">
           <div>
-            <label className="block text-sm font-semibold text-gray-700 mb-2">
+            <label className="block text-sm font-semibold text-gray-700 mb-2 min-h-[40px] flex items-end">
               Reps
             </label>
             <input

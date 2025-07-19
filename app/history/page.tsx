@@ -2,15 +2,19 @@
 
 import { useState, useEffect } from 'react';
 import Card from '../components/ui/Card';
+import WorkoutDetailsModal from '../components/workout/WorkoutDetailsModal';
 import { WorkoutSession, Exercise } from '@/lib/types';
 import { getDB } from '@/lib/storage/indexedDB';
 import { formatDate, calculateVolume } from '@/lib/utils';
-import { UIIcon, ActionIcon } from '../components/ui/Icon';
+import { MUSCLE_GROUPS } from '@/lib/constants';
+import { UIIcon, ActionIcon, MuscleGroupIcon } from '../components/ui/Icon';
 
 export default function HistoryPage() {
   const [workouts, setWorkouts] = useState<WorkoutSession[]>([]);
   const [loading, setLoading] = useState(true);
   const [exercises, setExercises] = useState<Exercise[]>([]);
+  const [showWorkoutDetails, setShowWorkoutDetails] = useState(false);
+  const [selectedWorkoutId, setSelectedWorkoutId] = useState<string | null>(null);
 
   useEffect(() => {
     loadWorkoutHistory();
@@ -64,6 +68,37 @@ export default function HistoryPage() {
     return exercise?.name || 'Unknown Exercise';
   };
 
+  const getWorkoutMuscleGroupVolumes = (workout: WorkoutSession) => {
+    const muscleGroupTotals: { [key: string]: number } = {};
+    
+    workout.exercises.forEach(sessionExercise => {
+      const exercise = exercises.find(ex => ex.id === sessionExercise.exerciseId);
+      if (exercise) {
+        const exerciseVolume = sessionExercise.sets.reduce((sum, set) => 
+          sum + (set.reps * set.weight), 0
+        );
+        muscleGroupTotals[exercise.muscleGroup] = (muscleGroupTotals[exercise.muscleGroup] || 0) + exerciseVolume;
+      }
+    });
+    
+    // Sort by volume and return top 3 muscle groups for preview
+    return Object.entries(muscleGroupTotals)
+      .filter(([_, volume]) => volume > 0)
+      .sort(([,a], [,b]) => b - a)
+      .slice(0, 3);
+  };
+
+  const openWorkoutDetails = (workoutId: string) => {
+    setSelectedWorkoutId(workoutId);
+    setShowWorkoutDetails(true);
+  };
+
+  const closeWorkoutDetails = () => {
+    setShowWorkoutDetails(false);
+    setSelectedWorkoutId(null);
+  };
+
+
   if (loading) {
     return (
       <div className="flex items-center justify-center min-h-screen">
@@ -97,6 +132,7 @@ export default function HistoryPage() {
           </Card>
         </div>
 
+
         {/* Workout History List */}
         <div className="space-y-4">
           {workouts.length > 0 ? (
@@ -109,8 +145,8 @@ export default function HistoryPage() {
               return (
                 <Card 
                   key={workout.id}
-                  className="p-4"
-                  onClick={() => window.location.href = `/history/${workout.id}`}
+                  className="p-4 cursor-pointer hover:bg-gray-50 transition-colors"
+                  onClick={() => openWorkoutDetails(workout.id)}
                 >
                   <div className="space-y-2">
                     <div className="flex justify-between items-start">
@@ -126,10 +162,23 @@ export default function HistoryPage() {
                         </p>
                       </div>
                       <div className="text-right">
-                        <p className="font-bold text-primary-600">
-                          {(volume / 1000).toFixed(1)}k
-                        </p>
-                        <p className="text-xs text-gray-600">volume</p>
+                        <div className="space-y-1">
+                          {getWorkoutMuscleGroupVolumes(workout).map(([muscleGroup, mgVolume]) => {
+                            const muscleInfo = MUSCLE_GROUPS[muscleGroup as keyof typeof MUSCLE_GROUPS];
+                            return (
+                              <div key={muscleGroup} className="flex items-center gap-1 justify-end">
+                                <span className="text-xs font-medium" style={{ color: muscleInfo.color }}>
+                                  {Math.round(mgVolume)} lbs
+                                </span>
+                                <MuscleGroupIcon 
+                                  name={muscleInfo.icon as any} 
+                                  size={12} 
+                                  color={muscleInfo.color}
+                                />
+                              </div>
+                            );
+                          })}
+                        </div>
                       </div>
                     </div>
                     
@@ -158,6 +207,12 @@ export default function HistoryPage() {
         </div>
       </main>
 
+      {/* Workout Details Modal */}
+      <WorkoutDetailsModal
+        isOpen={showWorkoutDetails}
+        onClose={closeWorkoutDetails}
+        workoutId={selectedWorkoutId}
+      />
     </div>
   );
 }

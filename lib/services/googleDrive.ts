@@ -105,8 +105,7 @@ export class SyncService {
     this.driveService = new GoogleDriveService();
   }
 
-  async uploadBackup(): Promise<string | null> {
-
+  async uploadBackup(triggerReason?: string): Promise<string | null> {
     try {
       // Get all local data
       const { getDB } = await import('@/lib/storage/indexedDB');
@@ -117,13 +116,51 @@ export class SyncService {
       const backupData = {
         version: '1.0',
         timestamp: new Date().toISOString(),
+        triggerReason: triggerReason || 'manual',
         data,
       };
 
-      return await this.driveService.uploadBackup(backupData);
+      const fileId = await this.driveService.uploadBackup(backupData);
+      
+      // Clean up old backups to maintain max 20 files
+      await this.cleanupOldBackups();
+      
+      return fileId;
     } catch (error) {
       console.error('Failed to create backup:', error);
       throw error;
+    }
+  }
+
+  private async cleanupOldBackups(): Promise<void> {
+    try {
+      const MAX_BACKUPS = 20;
+      const backups = await this.driveService.listBackups();
+      
+      if (backups.length > MAX_BACKUPS) {
+        // Sort by creation time (newest first)
+        const sortedBackups = backups.sort((a, b) => 
+          new Date(b.createdTime).getTime() - new Date(a.createdTime).getTime()
+        );
+        
+        // Delete oldest backups beyond the limit
+        const backupsToDelete = sortedBackups.slice(MAX_BACKUPS);
+        
+        console.log(`Cleaning up ${backupsToDelete.length} old backups`);
+        
+        for (const backup of backupsToDelete) {
+          try {
+            await this.driveService.deleteBackup(backup.id);
+            console.log(`Deleted old backup: ${backup.name}`);
+          } catch (error) {
+            console.error(`Failed to delete backup ${backup.id}:`, error);
+            // Continue with other deletions even if one fails
+          }
+        }
+      }
+    } catch (error) {
+      console.error('Failed to cleanup old backups:', error);
+      // Don't throw - cleanup failure shouldn't break the backup process
     }
   }
 
@@ -172,7 +209,6 @@ export class SyncService {
   }
 
   async autoSync(): Promise<void> {
-
     try {
       // Check if auto-sync is enabled and enough time has passed
       const { getDB } = await import('@/lib/storage/indexedDB');
@@ -189,7 +225,7 @@ export class SyncService {
 
       // Auto-sync every 24 hours
       if (hoursSinceSync >= 24) {
-        await this.uploadBackup();
+        await this.uploadBackup('daily_backup');
         
         await db.updateSyncMeta({
           ...syncMeta,
@@ -200,6 +236,70 @@ export class SyncService {
     } catch (error) {
       console.error('Auto-sync failed:', error);
       // Don't throw - auto-sync should fail silently
+    }
+  }
+
+  // Smart sync for workout events - only sync if significant changes  
+  async syncWorkoutEvent(triggerReason: string): Promise<void> {
+    try {
+      const { getDB } = await import('@/lib/storage/indexedDB');
+      const db = await getDB();
+      
+      // Get sync metadata to check last sync time
+      const syncMeta = await db.getSyncMeta();
+      const lastSync = syncMeta?.lastSyncTime ? new Date(syncMeta.lastSyncTime) : new Date(0);
+      const now = new Date();
+      const minutesSinceSync = (now.getTime() - lastSync.getTime()) / (1000 * 60);
+      
+      // Only sync if enough time has passed to avoid excessive syncing
+      const shouldSync = this.shouldSyncForTrigger(triggerReason, minutesSinceSync);
+      
+      if (shouldSync) {
+        console.log(`Background sync triggered: ${triggerReason}`);
+        
+        // Run sync in background without blocking UI
+        this.uploadBackup(triggerReason).then(async () => {
+          await db.updateSyncMeta({
+            lastSyncTime: now,
+            lastSyncStatus: 'success',
+            fileId: 'auto-sync',
+          });
+          console.log(`Background sync completed: ${triggerReason}`);
+        }).catch((error) => {
+          console.error(`Background sync failed for ${triggerReason}:`, error);
+          // Update sync metadata with error status
+          db.updateSyncMeta({
+            lastSyncTime: now,
+            lastSyncStatus: 'failed',
+            fileId: 'auto-sync',
+          }).catch(() => {}); // Ignore metadata update errors
+        });
+      }
+    } catch (error) {
+      console.error(`Workout sync setup failed for ${triggerReason}:`, error);
+      // Don't throw - sync failure shouldn't break workout flow
+    }
+  }
+
+  private shouldSyncForTrigger(triggerReason: string, minutesSinceLastSync: number): boolean {
+    switch (triggerReason) {
+      case 'workout_completed':
+      case 'workout_ended_early':
+      case 'workout_auto_timeout':
+        // Always sync when workout finishes (but not more than once per minute)
+        return minutesSinceLastSync >= 1;
+      
+      case 'sets_batched':
+        // Sync after batched sets, but not more than once every 10 minutes
+        return minutesSinceLastSync >= 10;
+      
+      case 'workout_template_modified':
+        // Sync workout template changes, but not more than once every 5 minutes
+        return minutesSinceLastSync >= 5;
+      
+      default:
+        // For other triggers, sync if it's been at least 30 minutes
+        return minutesSinceLastSync >= 30;
     }
   }
 }
