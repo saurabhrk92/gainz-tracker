@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import Card from '../components/ui/Card';
-import { WorkoutSession } from '@/lib/types';
+import { WorkoutSession, Exercise } from '@/lib/types';
 import { getDB } from '@/lib/storage/indexedDB';
 import { formatDate, calculateVolume } from '@/lib/utils';
 import { UIIcon, ActionIcon } from '../components/ui/Icon';
@@ -10,6 +10,7 @@ import { UIIcon, ActionIcon } from '../components/ui/Icon';
 export default function HistoryPage() {
   const [workouts, setWorkouts] = useState<WorkoutSession[]>([]);
   const [loading, setLoading] = useState(true);
+  const [exercises, setExercises] = useState<Exercise[]>([]);
 
   useEffect(() => {
     loadWorkoutHistory();
@@ -18,12 +19,17 @@ export default function HistoryPage() {
   const loadWorkoutHistory = async () => {
     try {
       const db = await getDB();
-      const allWorkouts = await db.getWorkouts();
+      const [allWorkouts, allExercises] = await Promise.all([
+        db.getWorkouts(),
+        db.getExercises()
+      ]);
+      
       // Sort by date, newest first
       const sorted = allWorkouts.sort((a, b) => 
         new Date(b.date).getTime() - new Date(a.date).getTime()
       );
       setWorkouts(sorted);
+      setExercises(allExercises);
     } catch (error) {
       console.error('Failed to load workout history:', error);
     } finally {
@@ -51,6 +57,11 @@ export default function HistoryPage() {
       totalVolume += calculateVolume(exercise.sets);
     });
     return totalVolume;
+  };
+
+  const getExerciseName = (exerciseId: string): string => {
+    const exercise = exercises.find(ex => ex.id === exerciseId);
+    return exercise?.name || 'Unknown Exercise';
   };
 
   if (loading) {
@@ -124,10 +135,10 @@ export default function HistoryPage() {
                     
                     {/* Exercise preview */}
                     <div className="text-sm text-gray-500">
-                      {workout.exercises.slice(0, 2).map((_, index) => (
+                      {workout.exercises.slice(0, 2).map((sessionExercise, index) => (
                         <span key={index}>
-                          Exercise {index + 1}
-                          {index < 1 && workout.exercises.length > 2 && ', '}
+                          {getExerciseName(sessionExercise.exerciseId)}
+                          {index < 1 && workout.exercises.length > 1 && ', '}
                         </span>
                       ))}
                       {workout.exercises.length > 2 && (

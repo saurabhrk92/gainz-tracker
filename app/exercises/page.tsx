@@ -109,7 +109,7 @@ export default function ExercisesPage() {
             <div className="flex gap-2 overflow-x-auto pb-2">
               <button
                 onClick={() => setSelectedMuscleGroup('all')}
-                className={`px-4 py-2 rounded-lg whitespace-nowrap font-medium transition-all duration-200 border ${
+                className={`px-6 py-2 rounded-lg whitespace-nowrap font-medium transition-all duration-200 border ${
                   selectedMuscleGroup === 'all'
                     ? 'bg-purple-600 text-white border-purple-600'
                     : 'bg-white text-gray-700 border-gray-200 hover:bg-gray-50'
@@ -121,7 +121,7 @@ export default function ExercisesPage() {
                 <button
                   key={key}
                   onClick={() => setSelectedMuscleGroup(key as MuscleGroup)}
-                  className={`px-4 py-2 rounded-lg whitespace-nowrap font-medium transition-all duration-200 border ${
+                  className={`px-4 py-2 rounded-lg whitespace-nowrap font-medium transition-all duration-200 border flex items-center gap-1 ${
                     selectedMuscleGroup === key
                       ? 'text-white border-transparent'
                       : 'bg-white text-gray-700 border-gray-200 hover:bg-gray-50'
@@ -130,7 +130,7 @@ export default function ExercisesPage() {
                     backgroundColor: selectedMuscleGroup === key ? info.color : undefined,
                   }}
                 >
-                  <MuscleGroupIcon name={info.icon as any} size={16} className="mr-1" />
+                  <MuscleGroupIcon name={info.icon as any} size={16} className="flex-shrink-0" />
                   {info.label}
                 </button>
               ))}

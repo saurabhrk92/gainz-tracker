@@ -35,7 +35,7 @@ const Icon: React.FC<IconProps> = ({
       alt={`${name} icon`}
       width={size}
       height={size}
-      className={`inline-block ${className}`}
+      className={`block ${className}`}
       style={{ 
         filter: color !== 'currentColor' ? `none` : undefined,
         color: color === 'currentColor' ? undefined : color
