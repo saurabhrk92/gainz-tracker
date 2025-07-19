@@ -198,7 +198,7 @@ export default function TemplatesPage() {
                         </div>
                       </div>
                       
-                      <div className="flex gap-2">
+                      <div className="flex gap-2 relative z-10">
                         <Button
                           variant="glass"
                           size="sm"
@@ -220,7 +220,7 @@ export default function TemplatesPage() {
                     
                     {/* Subtle background gradient */}
                     <div 
-                      className="absolute top-0 right-0 w-24 h-24 opacity-5 rounded-full -translate-y-6 translate-x-6"
+                      className="absolute top-0 right-0 w-24 h-24 opacity-5 rounded-full -translate-y-6 translate-x-6 pointer-events-none"
                       style={{ backgroundColor: muscleGroupInfo.color }}
                     ></div>
                   </Card>
