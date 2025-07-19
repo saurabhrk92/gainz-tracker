@@ -14,6 +14,7 @@ import SetInputForm from '../components/workout/SetInputForm';
 import Button from '../components/ui/Button';
 import Card from '../components/ui/Card';
 import Modal from '../components/ui/Modal';
+import { MuscleGroupIcon } from '../components/ui/Icon';
 
 function WorkoutPageContent() {
   const router = useRouter();
@@ -410,7 +411,6 @@ function WorkoutPageContent() {
           isActive={isWorkoutTimerActive}
           onStart={handleTimerStart}
           onPause={handleTimerPause}
-          onReset={handleTimerReset}
         />
 
         {/* Current Exercise */}
@@ -422,7 +422,7 @@ function WorkoutPageContent() {
                   className="w-12 h-12 rounded-2xl flex items-center justify-center text-white font-bold shadow-md"
                   style={{ backgroundColor: muscleGroupInfo.color }}
                 >
-                  {muscleGroupInfo.emoji}
+                  <MuscleGroupIcon name={muscleGroupInfo.icon as any} size={20} color="white" />
                 </div>
                 <div>
                   <h3 className="text-xl font-bold text-gray-800 font-display">{currentExercise.name}</h3>
@@ -543,7 +543,9 @@ function WorkoutPageContent() {
                       {exerciseSets.length}/{templateEx.targetSets} sets • {templateEx.targetReps} reps
                     </p>
                   </div>
-                  <div className="text-lg">{muscleInfo.emoji}</div>
+                  <div className="text-lg">
+                    <MuscleGroupIcon name={muscleInfo.icon as any} size={18} />
+                  </div>
                 </div>
               );
             })}

@@ -1,14 +1,14 @@
 import { MuscleGroup } from './types';
 
-export const MUSCLE_GROUPS: Record<MuscleGroup, { label: string; emoji: string; color: string }> = {
-  chest: { label: 'Chest', emoji: '🫀', color: '#ff7c7c' },
-  back: { label: 'Back', emoji: '🔙', color: '#8dd1e1' },
-  shoulders: { label: 'Shoulders', emoji: '🤷', color: '#d084d0' },
-  arms: { label: 'Arms', emoji: '💪', color: '#ffb347' },
-  legs: { label: 'Legs', emoji: '🦵', color: '#82ca9d' },
-  glutes: { label: 'Glutes', emoji: '🍑', color: '#ff9999' },
-  core: { label: 'Core', emoji: '🎯', color: '#ffd93d' },
-  calves: { label: 'Calves', emoji: '🦶', color: '#a8c3ff' },
+export const MUSCLE_GROUPS: Record<MuscleGroup, { label: string; icon: string; color: string }> = {
+  chest: { label: 'Chest', icon: 'chest', color: '#ff7c7c' },
+  back: { label: 'Back', icon: 'back', color: '#8dd1e1' },
+  shoulders: { label: 'Shoulders', icon: 'shoulders', color: '#d084d0' },
+  arms: { label: 'Arms', icon: 'arms', color: '#ffb347' },
+  legs: { label: 'Legs', icon: 'legs', color: '#82ca9d' },
+  glutes: { label: 'Glutes', icon: 'glutes', color: '#ff9999' },
+  core: { label: 'Core', icon: 'core', color: '#ffd93d' },
+  calves: { label: 'Calves', icon: 'calves', color: '#a8c3ff' },
 };
 
 export const WEEK_DAYS = [
@@ -22,10 +22,11 @@ export const WEEK_DAYS = [
 ] as const;
 
 export const EQUIPMENT_TYPES = [
-  { value: 'barbell', label: 'Barbell', icon: '🏋️' },
-  { value: 'dumbbell', label: 'Dumbbell', icon: '💪' },
-  { value: 'fixed_bar', label: 'Fixed Weight Bar', icon: '⚖️' },
-  { value: 'machine', label: 'Machine', icon: '🎰' },
+  { value: 'barbell', label: 'Barbell', icon: 'barbell' },
+  { value: 'dumbbell', label: 'Dumbbell', icon: 'dumbbell' },
+  { value: 'fixed_bar', label: 'Fixed Weight Bar', icon: 'fixed-bar' },
+  { value: 'machine', label: 'Machine', icon: 'machine' },
+  { value: 'bodyweight', label: 'Bodyweight', icon: 'dumbbell' },
 ] as const;
 
 export const BAR_WEIGHTS = [
@@ -38,6 +39,9 @@ export const DUMBBELL_WEIGHTS = Array.from({ length: 60 }, (_, i) => (i + 1) * 2
 
 // Generate fixed bar weights from 5 to 200 in increments of 5
 export const FIXED_BAR_WEIGHTS = Array.from({ length: 40 }, (_, i) => (i + 1) * 5);
+
+// Generate bodyweight weights from 0 to 200 in increments of 5
+export const BODYWEIGHT_WEIGHTS = Array.from({ length: 41 }, (_, i) => i * 5);
 
 export const PLATE_SIZES = [45, 25, 10, 5, 2.5] as const;
 

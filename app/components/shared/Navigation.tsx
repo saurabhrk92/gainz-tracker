@@ -4,14 +4,15 @@ import { useState } from 'react';
 import { usePathname } from 'next/navigation';
 import Link from 'next/link';
 import { cn } from '@/lib/utils';
+import { UIIcon } from '../ui/Icon';
 
 const navItems = [
-  { href: '/', label: 'Home', icon: '🏠' },
-  { href: '/templates', label: 'Templates', icon: '📋' },
-  { href: '/exercises', label: 'Exercises', icon: '💪' },
-  { href: '/history', label: 'History', icon: '📖' },
-  { href: '/progress', label: 'Progress', icon: '📊' },
-  { href: '/settings', label: 'Settings', icon: '⚙️' },
+  { href: '/', label: 'Home', icon: 'workout' },
+  { href: '/templates', label: 'Templates', icon: 'templates' },
+  { href: '/exercises', label: 'Exercises', icon: 'exercises' },
+  { href: '/history', label: 'History', icon: 'history' },
+  { href: '/progress', label: 'Progress', icon: 'progress' },
+  { href: '/settings', label: 'Settings', icon: 'settings' },
 ];
 
 export default function Navigation() {
@@ -69,7 +70,7 @@ export default function Navigation() {
               onClick={() => setIsOpen(false)}
               className="w-8 h-8 bg-gray-100 rounded-lg flex items-center justify-center"
             >
-              ✕
+              <UIIcon name="close" size={16} />
             </button>
           </div>
 
@@ -89,7 +90,7 @@ export default function Navigation() {
                       : 'text-gray-700 hover:bg-gray-100'
                   )}
                 >
-                  <span className="text-lg">{item.icon}</span>
+                  <UIIcon name={item.icon as any} size={20} />
                   <span className="font-medium">{item.label}</span>
                   {isActive && (
                     <div className="ml-auto w-2 h-2 bg-white rounded-full" />

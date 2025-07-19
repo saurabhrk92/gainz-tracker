@@ -3,6 +3,7 @@
 import { WorkoutSession, Exercise } from '@/lib/types';
 import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip, Legend } from 'recharts';
 import { MUSCLE_GROUPS } from '@/lib/constants';
+import { UIIcon } from '../ui/Icon';
 
 interface MuscleGroupChartProps {
   workouts: WorkoutSession[];
@@ -16,7 +17,7 @@ export default function MuscleGroupChart({ workouts, exercises }: MuscleGroupCha
     return (
       <div className="h-64 flex items-center justify-center text-gray-500">
         <div className="text-center">
-          <div className="text-4xl mb-2">🎯</div>
+          <UIIcon name="progress" size={48} color="#9CA3AF" className="mb-2" />
           <p>No muscle group data available</p>
           <p className="text-sm mt-1">Complete some workouts to see your focus areas!</p>
         </div>
@@ -95,7 +96,7 @@ function processMuscleGroupData(workouts: WorkoutSession[], exercises: Exercise[
     .map(([muscleGroup, sets]) => ({
       name: MUSCLE_GROUPS[muscleGroup as keyof typeof MUSCLE_GROUPS]?.label || muscleGroup,
       sets,
-      emoji: MUSCLE_GROUPS[muscleGroup as keyof typeof MUSCLE_GROUPS]?.emoji || '💪',
+      icon: MUSCLE_GROUPS[muscleGroup as keyof typeof MUSCLE_GROUPS]?.icon || 'arms',
     }))
     .sort((a, b) => b.sets - a.sets); // Sort by number of sets descending
 }

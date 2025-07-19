@@ -10,6 +10,7 @@ import { Exercise, MuscleGroup } from '@/lib/types';
 import { getDB } from '@/lib/storage/indexedDB';
 import { MUSCLE_GROUPS, EQUIPMENT_TYPES } from '@/lib/constants';
 import { formatDate } from '@/lib/utils';
+import { MuscleGroupIcon, EquipmentIcon, ActionIcon, UIIcon } from '../components/ui/Icon';
 
 export default function ExercisesPage() {
   const [exercises, setExercises] = useState<Exercise[]>([]);
@@ -129,7 +130,8 @@ export default function ExercisesPage() {
                     backgroundColor: selectedMuscleGroup === key ? info.color : undefined,
                   }}
                 >
-                  {info.emoji} {info.label}
+                  <MuscleGroupIcon name={info.icon as any} size={16} className="mr-1" />
+                  {info.label}
                 </button>
               ))}
             </div>
@@ -156,7 +158,11 @@ export default function ExercisesPage() {
                             className="w-10 h-10 rounded-lg flex items-center justify-center text-white font-bold text-lg"
                             style={{ backgroundColor: muscleGroupInfo.color }}
                           >
-                            {muscleGroupInfo.emoji}
+                            <MuscleGroupIcon 
+                              name={muscleGroupInfo.icon as any} 
+                              size={20} 
+                              color="white"
+                            />
                           </div>
                           <div>
                             <h3 className="text-base font-bold text-black">
@@ -177,13 +183,13 @@ export default function ExercisesPage() {
                             
                             {exercise.type === 'barbell' && exercise.barWeight && (
                               <div className="flex items-center gap-2 bg-white rounded-lg px-3 py-1 border border-gray-200">
-                                <span>🏋️</span>
+                                <EquipmentIcon name="barbell" size={16} />
                                 <span className="font-medium text-sm text-gray-700">{exercise.barWeight} lb bar</span>
                               </div>
                             )}
                             
                             <div className="flex items-center gap-2 bg-white rounded-lg px-3 py-1 border border-gray-200">
-                              <span>⏱️</span>
+                              <ActionIcon name="timer" size={16} />
                               <span className="font-medium text-sm text-gray-700">{exercise.defaultRestTime}s rest</span>
                             </div>
                           </div>
@@ -210,8 +216,11 @@ export default function ExercisesPage() {
               })
             ) : (
               <Card className="text-center py-8">
-                <div className="text-4xl mb-4">
-                  {searchTerm || selectedMuscleGroup !== 'all' ? '🔍' : '💪'}
+                <div className="mb-4">
+                  {searchTerm || selectedMuscleGroup !== 'all' ? 
+                    <UIIcon name="exercises" size={48} color="#9CA3AF" /> : 
+                    <UIIcon name="exercises" size={48} color="#9CA3AF" />
+                  }
                 </div>
                 <h3 className="text-lg font-bold text-black mb-2">
                   {searchTerm || selectedMuscleGroup !== 'all' 

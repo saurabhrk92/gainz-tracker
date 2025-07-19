@@ -3,6 +3,7 @@
 import { useState, useEffect, useRef } from 'react';
 import Button from '../ui/Button';
 import Card from '../ui/Card';
+import { ActionIcon } from '../ui/Icon';
 
 interface WorkoutTimerProps {
   isActive: boolean;
@@ -104,7 +105,10 @@ export default function WorkoutTimer({ isActive, onStart, onPause, workoutId, st
     <Card className="text-center transform hover:scale-[1.02] transition-all duration-200">
       <div className="space-y-4">
         <div>
-          <h3 className="text-lg font-bold text-gray-800 mb-2 font-display">⏱️ Active Time</h3>
+          <h3 className="text-lg font-bold text-gray-800 mb-2 font-display flex items-center gap-2">
+            <ActionIcon name="timer" size={20} />
+            Active Time
+          </h3>
           <div className="text-4xl font-bold text-primary-600 font-mono tracking-wide">
             {formatTime(seconds)}
           </div>
@@ -120,7 +124,8 @@ export default function WorkoutTimer({ isActive, onStart, onPause, workoutId, st
               className="flex-1"
               size="sm"
             >
-              ▶️ Resume
+              <ActionIcon name="play" size={16} className="mr-1" />
+              Resume
             </Button>
           ) : (
             <Button
@@ -129,7 +134,8 @@ export default function WorkoutTimer({ isActive, onStart, onPause, workoutId, st
               className="flex-1"
               size="sm"
             >
-              ⏸️ Pause
+              <ActionIcon name="pause" size={16} className="mr-1" />
+              Pause
             </Button>
           )}
         </div>

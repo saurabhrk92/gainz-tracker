@@ -6,6 +6,7 @@ import { getDB } from '@/lib/storage/indexedDB';
 import { MUSCLE_GROUPS, WEEK_DAYS } from '@/lib/constants';
 import Button from '../ui/Button';
 import Card from '../ui/Card';
+import { UIIcon, ActionIcon, MuscleGroupIcon } from '../ui/Icon';
 
 interface TemplateFormProps {
   template?: WorkoutTemplate;
@@ -116,7 +117,9 @@ export default function TemplateForm({ template, onSuccess, onCancel }: Template
   if (availableExercises.length === 0) {
     return (
       <Card className="text-center space-y-4 py-8">
-        <div className="text-6xl opacity-50">💪</div>
+        <div className="opacity-50">
+          <UIIcon name="exercises" size={72} color="#9CA3AF" />
+        </div>
         <div>
           <h3 className="text-xl font-bold text-gray-800 mb-2 font-display">No Exercises Available</h3>
           <p className="text-gray-600">You need to create some exercises first before making a template.</p>
@@ -156,10 +159,10 @@ export default function TemplateForm({ template, onSuccess, onCancel }: Template
               onChange={(e) => setMuscleGroup(e.target.value as MuscleGroup | 'full_body')}
               className="w-full p-4 bg-white/95 backdrop-blur-md rounded-2xl border border-white/20 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent shadow-lg transition-all duration-200"
             >
-              <option value="full_body">🏋️ Full Body</option>
+              <option value="full_body">Full Body</option>
               {Object.entries(MUSCLE_GROUPS).map(([key, info]) => (
                 <option key={key} value={key}>
-                  {info.emoji} {info.label}
+                  {info.label}
                 </option>
               ))}
             </select>
@@ -194,7 +197,7 @@ export default function TemplateForm({ template, onSuccess, onCancel }: Template
             size="sm"
             variant="secondary"
           >
-            ➕ Add Exercise
+            Add Exercise
           </Button>
         </div>
 
@@ -214,7 +217,11 @@ export default function TemplateForm({ template, onSuccess, onCancel }: Template
                         className="w-10 h-10 rounded-xl flex items-center justify-center text-white font-bold shadow-md"
                         style={{ backgroundColor: muscleGroupInfo.color }}
                       >
-                        {muscleGroupInfo.emoji}
+                        <MuscleGroupIcon 
+                          name={muscleGroupInfo.icon as any} 
+                          size={20} 
+                          color="white"
+                        />
                       </div>
                       <div>
                         <h4 className="font-bold text-gray-800">{exercise.name}</h4>
@@ -227,7 +234,7 @@ export default function TemplateForm({ template, onSuccess, onCancel }: Template
                       size="sm"
                       variant="danger"
                     >
-                      🗑️
+                      <ActionIcon name="delete" size={14} />
                     </Button>
                   </div>
 
@@ -245,7 +252,7 @@ export default function TemplateForm({ template, onSuccess, onCancel }: Template
                           const exMuscleGroup = MUSCLE_GROUPS[ex.muscleGroup];
                           return (
                             <option key={ex.id} value={ex.id}>
-                              {exMuscleGroup.emoji} {ex.name} ({exMuscleGroup.label})
+                              {ex.name} ({exMuscleGroup.label})
                             </option>
                           );
                         })}
@@ -301,7 +308,7 @@ export default function TemplateForm({ template, onSuccess, onCancel }: Template
 
           {templateExercises.length === 0 && (
             <Card className="text-center py-8 text-gray-500">
-              <div className="text-4xl mb-2">📝</div>
+              <UIIcon name="templates" size={48} color="#9CA3AF" className="mb-2" />
               <p>No exercises added yet</p>
               <p className="text-sm mt-1">Click "Add Exercise" to start building your template</p>
             </Card>

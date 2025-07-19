@@ -3,6 +3,7 @@
 import { WorkoutSession } from '@/lib/types';
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
 import { calculateVolume, formatDate } from '@/lib/utils';
+import { UIIcon } from '../ui/Icon';
 
 interface VolumeChartProps {
   workouts: WorkoutSession[];
@@ -16,7 +17,7 @@ export default function VolumeChart({ workouts, timeRange }: VolumeChartProps) {
     return (
       <div className="h-64 flex items-center justify-center text-gray-500">
         <div className="text-center">
-          <div className="text-4xl mb-2">📊</div>
+          <UIIcon name="progress" size={48} color="#9CA3AF" className="mb-2" />
           <p>No volume data available</p>
           <p className="text-sm mt-1">Complete some workouts to see your progress!</p>
         </div>

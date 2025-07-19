@@ -9,6 +9,7 @@ import { WorkoutTemplate } from '@/lib/types';
 import { getDB } from '@/lib/storage/indexedDB';
 import { MUSCLE_GROUPS, WEEK_DAYS } from '@/lib/constants';
 import { formatDate } from '@/lib/utils';
+import { MuscleGroupIcon, UIIcon, ActionIcon } from '../components/ui/Icon';
 
 export default function TemplatesPage() {
   const [templates, setTemplates] = useState<WorkoutTemplate[]>([]);
@@ -127,7 +128,7 @@ export default function TemplatesPage() {
             {templates.length > 0 ? (
               templates.map((template) => {
                 const muscleGroupInfo = template.muscleGroup === 'full_body' 
-                  ? { label: 'Full Body', emoji: '🏋️', color: '#7c3aed' }
+                  ? { label: 'Full Body', icon: 'workout', color: '#7c3aed' }
                   : MUSCLE_GROUPS[template.muscleGroup];
                 
                 const dayInfo = WEEK_DAYS.find(d => d.value === template.day);
@@ -141,7 +142,15 @@ export default function TemplatesPage() {
                             className="w-10 h-10 rounded-lg flex items-center justify-center text-white font-bold text-lg"
                             style={{ backgroundColor: muscleGroupInfo.color }}
                           >
-                            {muscleGroupInfo.emoji}
+                            {template.muscleGroup === 'full_body' ? (
+                              <UIIcon name="workout" size={20} color="white" />
+                            ) : (
+                              <MuscleGroupIcon 
+                                name={muscleGroupInfo.icon as any} 
+                                size={20} 
+                                color="white"
+                              />
+                            )}
                           </div>
                           <div>
                             <h3 className="text-base font-bold text-black">
@@ -196,7 +205,7 @@ export default function TemplatesPage() {
                           onClick={() => handleDeleteTemplate(template.id)}
                           className="text-xs text-gray-600 hover:text-red-600"
                         >
-                          🗑️
+                          <ActionIcon name="delete" size={14} />
                         </Button>
                       </div>
                     </div>
@@ -205,7 +214,7 @@ export default function TemplatesPage() {
               })
             ) : (
               <Card className="text-center py-8">
-                <div className="text-4xl mb-4">📝</div>
+                <UIIcon name="templates" size={48} color="#9CA3AF" className="mb-4" />
                 <h3 className="text-lg font-bold text-black mb-2">No Templates Yet</h3>
                 <p className="text-gray-600 text-sm mb-4">Create your first workout template to get started!</p>
                 <Button 

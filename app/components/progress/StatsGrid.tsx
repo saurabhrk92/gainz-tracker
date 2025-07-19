@@ -2,6 +2,7 @@
 
 import { WorkoutSession, Exercise } from '@/lib/types';
 import { calculateVolume, formatVolume } from '@/lib/utils';
+import { UIIcon, ActionIcon } from '../ui/Icon';
 
 interface StatsGridProps {
   workouts: WorkoutSession[];
@@ -28,7 +29,7 @@ export default function StatsGrid({ workouts, exercises }: StatsGridProps) {
         <div className="text-center">
           <div className="text-3xl font-bold mb-1">{formatVolume(totalVolume)}</div>
           <div className="text-blue-100 text-sm font-medium">Total Volume</div>
-          <div className="text-4xl mt-2">💪</div>
+          <UIIcon name="progress" size={32} color="white" className="mt-2" />
         </div>
       </div>
 
@@ -37,7 +38,7 @@ export default function StatsGrid({ workouts, exercises }: StatsGridProps) {
         <div className="text-center">
           <div className="text-3xl font-bold mb-1">{totalWorkouts}</div>
           <div className="text-green-100 text-sm font-medium">Workouts</div>
-          <div className="text-4xl mt-2">🏋️</div>
+          <UIIcon name="workout" size={32} color="white" className="mt-2" />
         </div>
       </div>
 
@@ -46,7 +47,7 @@ export default function StatsGrid({ workouts, exercises }: StatsGridProps) {
         <div className="text-center">
           <div className="text-3xl font-bold mb-1">{currentStreak}</div>
           <div className="text-orange-100 text-sm font-medium">Day Streak</div>
-          <div className="text-4xl mt-2">🔥</div>
+          <ActionIcon name="timer" size={32} color="white" className="mt-2" />
         </div>
       </div>
 
@@ -55,7 +56,7 @@ export default function StatsGrid({ workouts, exercises }: StatsGridProps) {
         <div className="text-center">
           <div className="text-3xl font-bold mb-1">{averageWorkoutsPerWeek.toFixed(1)}</div>
           <div className="text-purple-100 text-sm font-medium">Per Week</div>
-          <div className="text-4xl mt-2">📅</div>
+          <UIIcon name="calendar" size={32} color="white" className="mt-2" />
         </div>
       </div>
     </div>

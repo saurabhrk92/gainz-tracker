@@ -13,6 +13,7 @@ import SetInputForm from './SetInputForm';
 import Button from '../ui/Button';
 import Card from '../ui/Card';
 import Modal from '../ui/Modal';
+import { MuscleGroupIcon, ActionIcon } from '../ui/Icon';
 
 interface WorkoutModalProps {
   isOpen: boolean;
@@ -112,14 +113,16 @@ export default function WorkoutModal({ isOpen, onClose, templateId, workoutId }:
           initialSets[ex.exerciseId] = [];
         });
         setSets(initialSets);
-        setWorkoutStartTime(new Date());
+        const startTime = new Date();
+        setWorkoutStartTime(startTime);
+        setIsWorkoutTimerActive(true); // Auto-start the workout timer
         
         // Create workout session in database (but not marked as in_progress yet)
         const sessionId = crypto.randomUUID();
         const workoutSession = {
           id: sessionId,
           templateId: templateId!,
-          date: new Date(),
+          date: startTime,
           status: 'paused' as const, // Start as paused, mark in_progress when first set logged
           exercises: templateData.exercises.map(templateEx => ({
             exerciseId: templateEx.exerciseId,
@@ -372,7 +375,7 @@ export default function WorkoutModal({ isOpen, onClose, templateId, workoutId }:
 
   if (loading || !template || exercises.length === 0) {
     return (
-      <div className="fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center">
+      <div className="fixed inset-0 bg-black bg-opacity-50 z-[9999] flex items-center justify-center">
         <div className="bg-white rounded-lg p-8">
           <div className="text-center">
             <div className="spinner mb-4" />
@@ -392,7 +395,7 @@ export default function WorkoutModal({ isOpen, onClose, templateId, workoutId }:
   const progress = Math.round((completedExercises / template.exercises.length) * 100);
 
   return (
-    <div className="fixed inset-0 bg-black bg-opacity-50 z-50">
+    <div className="fixed inset-0 bg-black bg-opacity-50 z-[9999]">
       <div className="bg-white h-full flex flex-col">
         {/* Header with Close Button */}
         <header className="bg-gradient-primary text-white p-4 safe-top relative overflow-hidden">
@@ -447,7 +450,11 @@ export default function WorkoutModal({ isOpen, onClose, templateId, workoutId }:
                     className="w-12 h-12 rounded-2xl flex items-center justify-center text-white font-bold shadow-md"
                     style={{ backgroundColor: muscleGroupInfo.color }}
                   >
-                    {muscleGroupInfo.emoji}
+                    <MuscleGroupIcon 
+                      name={muscleGroupInfo.icon as any} 
+                      size={24} 
+                      color="white"
+                    />
                   </div>
                   <div>
                     <h3 className="text-xl font-bold text-gray-800 font-display">{currentExercise.name}</h3>
@@ -481,7 +488,7 @@ export default function WorkoutModal({ isOpen, onClose, templateId, workoutId }:
                               onClick={() => handlePlateCalculator(set.weight)}
                               className="text-xs"
                             >
-                              🧮
+                              <ActionIcon name="calculator" size={14} />
                             </Button>
                           )}
                         </div>
@@ -510,28 +517,38 @@ export default function WorkoutModal({ isOpen, onClose, templateId, workoutId }:
               disabled={currentExerciseIndex === 0}
               className="w-full"
             >
-              ⬅️ Previous
+              <ActionIcon name="previous" size={16} className="mr-1" />
+              Previous
             </Button>
             <Button
               onClick={handleNextExercise}
               disabled={isLastExercise}
               className="w-full"
             >
-              {isLastExercise ? '🏁 Last Exercise' : '➡️ Next'}
+              {isLastExercise ? (
+                <>
+                  <ActionIcon name="finish" size={16} className="mr-1" />
+                  Last Exercise
+                </>
+              ) : (
+                <>
+                  <ActionIcon name="next" size={16} className="mr-1" />
+                  Next
+                </>
+              )}
             </Button>
           </div>
 
           {/* Workout Actions */}
-          {currentSets.length > 0 && (
-            <Button
-              onClick={handleEndWorkoutEarly}
-              variant="secondary"
-              className="w-full"
-              size="sm"
-            >
-              ⏹️ End Workout Early
-            </Button>
-          )}
+          <Button
+            onClick={handleEndWorkoutEarly}
+            variant="secondary"
+            className="w-full"
+            size="sm"
+          >
+            <ActionIcon name="stop" size={16} className="mr-1" />
+            End Workout Early
+          </Button>
 
           {/* Exercise Overview */}
           <Card>
@@ -560,7 +577,7 @@ export default function WorkoutModal({ isOpen, onClose, templateId, workoutId }:
                         ? 'bg-green-600 text-white'
                         : 'bg-gray-400 text-white'
                     }`}>
-                      {exerciseSets.length > 0 ? '✓' : index + 1}
+                      {exerciseSets.length > 0 ? <ActionIcon name="finish" size={14} color="white" /> : index + 1}
                     </div>
                     <div className="flex-1">
                       <p className="font-medium text-gray-800">{exercise?.name || 'Unknown Exercise'}</p>
@@ -568,7 +585,13 @@ export default function WorkoutModal({ isOpen, onClose, templateId, workoutId }:
                         {exerciseSets.length}/{templateEx.targetSets} sets • {templateEx.targetReps} reps
                       </p>
                     </div>
-                    <div className="text-lg">{muscleInfo.emoji}</div>
+                    <div className="text-lg">
+                      <MuscleGroupIcon 
+                        name={muscleInfo.icon as any} 
+                        size={18} 
+                        color={muscleInfo.color}
+                      />
+                    </div>
                   </div>
                 );
               })}

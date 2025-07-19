@@ -2,6 +2,7 @@
 
 import { Exercise, SessionExercise } from '@/lib/types';
 import { MUSCLE_GROUPS, EQUIPMENT_TYPES } from '@/lib/constants';
+import { MuscleGroupIcon, EquipmentIcon, UIIcon, ActionIcon } from '../ui/Icon';
 
 interface ExerciseCardProps {
   exercise: Exercise;
@@ -23,12 +24,16 @@ export default function ExerciseCard({
         {/* Exercise Info */}
         <div className="text-center">
           <h2 className="text-2xl font-bold text-gray-800 flex items-center justify-center gap-2">
-            {muscleGroupInfo.emoji} {exercise.name}
+            <MuscleGroupIcon name={muscleGroupInfo.icon as any} size={20} className="mr-2" />
+            {exercise.name}
           </h2>
           <div className="flex items-center justify-center gap-4 mt-2 text-sm text-gray-600">
             <span>{muscleGroupInfo.label}</span>
             <span>•</span>
-            <span>{equipmentInfo?.icon} {equipmentInfo?.label}</span>
+            <span>
+              <EquipmentIcon name={equipmentInfo?.icon as any} size={16} className="mr-1" />
+              {equipmentInfo?.label}
+            </span>
             {exercise.type === 'barbell' && exercise.barWeight && (
               <>
                 <span>•</span>
@@ -59,7 +64,7 @@ export default function ExerciseCard({
                     : 'bg-gray-200 text-gray-500'
                 }`}
               >
-                {index < sessionExercise.completedSets ? '✓' : index + 1}
+                {index < sessionExercise.completedSets ? <UIIcon name="checkmark" size={14} color="white" /> : index + 1}
               </div>
             ))}
           </div>
@@ -89,7 +94,7 @@ export default function ExerciseCard({
                       {set.reps} reps @ {set.weight} lbs
                     </span>
                   </div>
-                  <div className="text-green-600 text-xl">✅</div>
+                  <UIIcon name="checkmark" size={24} color="#10B981" />
                 </div>
               ))}
             </div>
@@ -99,7 +104,10 @@ export default function ExerciseCard({
         {/* Suggested Weight */}
         {sessionExercise.sets.length > 0 && (
           <div className="bg-blue-50 border border-blue-200 rounded-2xl p-4">
-            <h3 className="font-semibold text-blue-800 mb-2">💡 Last Weight Used</h3>
+            <h3 className="font-semibold text-blue-800 mb-2 flex items-center gap-2">
+              <ActionIcon name="calculator" size={16} color="#1D4ED8" />
+              Last Weight Used
+            </h3>
             <div className="text-2xl font-bold text-blue-600">
               {sessionExercise.sets[sessionExercise.sets.length - 1].weight} lbs
             </div>
@@ -109,7 +117,10 @@ export default function ExerciseCard({
 
         {/* Rest Time Info */}
         <div className="bg-purple-50 border border-purple-200 rounded-2xl p-4 text-center">
-          <h3 className="font-semibold text-purple-800 mb-1">⏱️ Rest Time</h3>
+          <h3 className="font-semibold text-purple-800 mb-1 flex items-center justify-center gap-2">
+            <ActionIcon name="timer" size={16} color="#7C3AED" />
+            Rest Time
+          </h3>
           <div className="text-xl font-bold text-purple-600">
             {exercise.defaultRestTime}s
           </div>

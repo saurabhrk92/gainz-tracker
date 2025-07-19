@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react';
 import { WorkoutSession } from '@/lib/types';
 import { formatTime } from '@/lib/utils';
+import { ActionIcon } from '../ui/Icon';
 
 interface WorkoutHeaderProps {
   workout: WorkoutSession;
@@ -40,7 +41,7 @@ export default function WorkoutHeader({
         {/* Status and Time */}
         <div className="flex justify-between items-start mb-4">
           <div>
-            <h1 className="text-2xl font-bold font-display">🏋️ Live Workout</h1>
+            <h1 className="text-2xl font-bold font-display">Live Workout</h1>
             <div className="flex items-center gap-4 mt-2">
               <div className="flex items-center gap-2">
                 <div className={`w-3 h-3 rounded-full ${
@@ -64,14 +65,14 @@ export default function WorkoutHeader({
                 onClick={onPause}
                 className="w-10 h-10 bg-white/20 hover:bg-white/30 rounded-full flex items-center justify-center transition-all duration-200"
               >
-                ⏸️
+                <ActionIcon name="pause" size={20} color="white" />
               </button>
             ) : (
               <button
                 onClick={onResume}
                 className="w-10 h-10 bg-white/20 hover:bg-white/30 rounded-full flex items-center justify-center transition-all duration-200"
               >
-                ▶️
+                <ActionIcon name="play" size={20} color="white" />
               </button>
             )}
             
@@ -80,7 +81,7 @@ export default function WorkoutHeader({
                 onClick={onComplete}
                 className="w-10 h-10 bg-green-500 hover:bg-green-600 rounded-full flex items-center justify-center transition-all duration-200"
               >
-                ✅
+                <ActionIcon name="finish" size={20} color="white" />
               </button>
             )}
           </div>

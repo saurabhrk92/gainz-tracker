@@ -3,6 +3,7 @@
 import { WorkoutSession, Exercise } from '@/lib/types';
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend } from 'recharts';
 import { formatDate } from '@/lib/utils';
+import { UIIcon } from '../ui/Icon';
 
 interface StrengthChartProps {
   workouts: WorkoutSession[];
@@ -16,7 +17,7 @@ export default function StrengthChart({ workouts, exercises }: StrengthChartProp
     return (
       <div className="h-64 flex items-center justify-center text-gray-500">
         <div className="text-center">
-          <div className="text-4xl mb-2">💪</div>
+          <UIIcon name="progress" size={48} color="#9CA3AF" className="mb-2" />
           <p>No strength data available</p>
           <p className="text-sm mt-1">Complete some workouts to track your progress!</p>
         </div>

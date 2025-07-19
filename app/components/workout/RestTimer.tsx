@@ -3,6 +3,7 @@
 import { useState, useEffect, useRef } from 'react';
 import Button from '../ui/Button';
 import Card from '../ui/Card';
+import { ActionIcon, UIIcon } from '../ui/Icon';
 
 interface RestTimerProps {
   duration: number; // in seconds
@@ -114,7 +115,17 @@ export default function RestTimer({ duration, onComplete, onCancel }: RestTimerP
       <div className="space-y-4">
         <div>
           <h3 className="text-lg font-bold text-gray-800 mb-2 font-display">
-            {isCompleted ? '✅ Rest Complete!' : '⏳ Rest Timer'}
+            {isCompleted ? (
+              <span className="flex items-center justify-center gap-2">
+                <UIIcon name="checkmark" size={20} color="#10B981" />
+                Rest Complete!
+              </span>
+            ) : (
+              <span className="flex items-center justify-center gap-2">
+                <ActionIcon name="timer" size={20} color="#6B7280" />
+                Rest Timer
+              </span>
+            )}
           </h3>
           
           {/* Progress Circle */}
@@ -167,7 +178,8 @@ export default function RestTimer({ duration, onComplete, onCancel }: RestTimerP
                   size="sm"
                   disabled={timeLeft === 0}
                 >
-                  ▶️ Start
+                  <ActionIcon name="play" size={16} className="mr-1" />
+                  Start
                 </Button>
               ) : (
                 <Button
@@ -176,7 +188,8 @@ export default function RestTimer({ duration, onComplete, onCancel }: RestTimerP
                   className="flex-1"
                   size="sm"
                 >
-                  ⏸️ Pause
+                  <ActionIcon name="pause" size={16} className="mr-1" />
+                  Pause
                 </Button>
               )}
               
@@ -185,7 +198,7 @@ export default function RestTimer({ duration, onComplete, onCancel }: RestTimerP
                 variant="glass"
                 size="sm"
               >
-                🔄 Reset
+                Reset
               </Button>
             </div>
 
@@ -225,7 +238,8 @@ export default function RestTimer({ duration, onComplete, onCancel }: RestTimerP
               size="sm"
               className="w-full"
             >
-              ❌ Skip Rest
+              <ActionIcon name="delete" size={16} className="mr-1" />
+              Skip Rest
             </Button>
           </div>
         ) : (
@@ -238,7 +252,7 @@ export default function RestTimer({ duration, onComplete, onCancel }: RestTimerP
               className="w-full"
               size="sm"
             >
-              🏋️ Continue Workout
+              Continue Workout
             </Button>
           </div>
         )}

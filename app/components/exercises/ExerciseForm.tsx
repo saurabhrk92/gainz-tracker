@@ -4,6 +4,7 @@ import { useState } from 'react';
 import { Exercise, MuscleGroup, EquipmentType } from '@/lib/types';
 import { getDB } from '@/lib/storage/indexedDB';
 import { MUSCLE_GROUPS, EQUIPMENT_TYPES, BAR_WEIGHTS, REST_TIME_PRESETS } from '@/lib/constants';
+import { MuscleGroupIcon, EquipmentIcon } from '../ui/Icon';
 import { generateId } from '@/lib/utils';
 
 interface ExerciseFormProps {
@@ -83,7 +84,9 @@ export default function ExerciseForm({ onSuccess, onCancel }: ExerciseFormProps)
                   : 'border-gray-200 bg-white hover:bg-gray-50'
               }`}
             >
-              <div className="text-2xl mb-1">{info.emoji}</div>
+              <div className="text-2xl mb-1">
+                <MuscleGroupIcon name={info.icon as any} size={24} />
+              </div>
               <div className="text-sm font-medium">{info.label}</div>
             </button>
           ))}
@@ -107,7 +110,9 @@ export default function ExerciseForm({ onSuccess, onCancel }: ExerciseFormProps)
                   : 'border-gray-200 bg-white hover:bg-gray-50'
               }`}
             >
-              <div className="text-2xl mb-1">{equipment.icon}</div>
+              <div className="text-2xl mb-1">
+                <EquipmentIcon name={equipment.icon as any} size={24} />
+              </div>
               <div className="text-sm font-medium">{equipment.label}</div>
             </button>
           ))}
@@ -138,7 +143,6 @@ export default function ExerciseForm({ onSuccess, onCancel }: ExerciseFormProps)
           </div>
         </div>
       )}
-
 
       {/* Rest Time */}
       <div>

@@ -2,6 +2,7 @@
 
 import { useState } from 'react';
 import { WorkoutSet } from '@/lib/types';
+import { UIIcon, ActionIcon } from '../ui/Icon';
 
 interface SetInputProps {
   onSubmit: (reps: number, weight: number) => void;
@@ -58,7 +59,8 @@ export default function SetInput({
               }}
               className="w-full bg-blue-100 hover:bg-blue-200 text-blue-800 font-medium py-3 rounded-xl transition-all duration-200"
             >
-              📋 {lastSet.reps} reps @ {lastSet.weight} lbs
+              <UIIcon name="checkmark" size={16} className="mr-2" />
+              {lastSet.reps} reps @ {lastSet.weight} lbs
             </button>
           </div>
         )}
@@ -99,33 +101,60 @@ export default function SetInput({
         {/* Weight Input */}
         <div className="space-y-3">
           <label className="block text-sm font-semibold text-gray-700">Weight (lbs)</label>
-          <div className="space-y-3">
+          <div className="flex items-center gap-3">
+            {/* Decrement Button */}
+            <button
+              type="button"
+              onClick={() => {
+                const currentWeight = parseFloat(weight) || 0;
+                const newWeight = Math.max(0, currentWeight - 5);
+                setWeight(newWeight.toString());
+              }}
+              className="w-12 h-12 bg-gray-200 hover:bg-gray-300 rounded-xl flex items-center justify-center text-xl font-bold text-gray-700 transition-all duration-200"
+            >
+              −
+            </button>
+            
+            {/* Weight Input */}
             <input
               type="number"
               value={weight}
               onChange={(e) => setWeight(e.target.value)}
               placeholder="Enter weight"
-              className="w-full text-center text-3xl font-bold py-4 bg-gray-50 border-2 border-gray-200 rounded-2xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200"
+              className="flex-1 text-center text-3xl font-bold py-4 bg-gray-50 border-2 border-gray-200 rounded-2xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200"
               min="0"
               step="0.5"
             />
             
-            {/* Quick Weight Adjustments */}
-            <div className="grid grid-cols-5 gap-2">
-              {[-10, -5, -2.5, +2.5, +5, +10].map((adj) => (
-                <button
-                  key={adj}
-                  onClick={() => {
-                    const currentWeight = parseFloat(weight) || 0;
-                    const newWeight = Math.max(0, currentWeight + adj);
-                    setWeight(newWeight.toString());
-                  }}
-                  className="py-2 px-1 bg-gray-100 hover:bg-gray-200 text-gray-700 font-medium rounded-xl transition-all duration-200 text-sm"
-                >
-                  {adj > 0 ? '+' : ''}{adj}
-                </button>
-              ))}
-            </div>
+            {/* Increment Button */}
+            <button
+              type="button"
+              onClick={() => {
+                const currentWeight = parseFloat(weight) || 0;
+                const newWeight = currentWeight + 5;
+                setWeight(newWeight.toString());
+              }}
+              className="w-12 h-12 bg-gray-200 hover:bg-gray-300 rounded-xl flex items-center justify-center text-xl font-bold text-gray-700 transition-all duration-200"
+            >
+              +
+            </button>
+          </div>
+          
+          {/* Fine Adjustments */}
+          <div className="grid grid-cols-4 gap-2">
+            {[-2.5, -1, +1, +2.5].map((adj) => (
+              <button
+                key={adj}
+                onClick={() => {
+                  const currentWeight = parseFloat(weight) || 0;
+                  const newWeight = Math.max(0, currentWeight + adj);
+                  setWeight(newWeight.toString());
+                }}
+                className="py-2 px-1 bg-gray-100 hover:bg-gray-200 text-gray-700 font-medium rounded-xl transition-all duration-200 text-sm"
+              >
+                {adj > 0 ? '+' : ''}{adj}
+              </button>
+            ))}
           </div>
         </div>
 
@@ -145,7 +174,10 @@ export default function SetInput({
               Recording Set...
             </span>
           ) : (
-            '✅ Record Set'
+            <>
+              <UIIcon name="checkmark" size={16} className="mr-2" />
+              Record Set
+            </>
           )}
         </button>
 
@@ -164,19 +196,19 @@ export default function SetInput({
               if (currentVolume > lastVolume) {
                 return (
                   <div className="text-green-600 font-semibold">
-                    🚀 Volume increase! +{(currentVolume - lastVolume).toFixed(1)} lbs
+                    Volume increase! +{(currentVolume - lastVolume).toFixed(1)} lbs
                   </div>
                 );
               } else if (currentVolume === lastVolume) {
                 return (
                   <div className="text-blue-600 font-semibold">
-                    💪 Same as last time - great consistency!
+                    Same as last time - great consistency!
                   </div>
                 );
               } else {
                 return (
                   <div className="text-yellow-600 font-semibold">
-                    📉 Lower volume than last time
+                    Lower volume than last time
                   </div>
                 );
               }

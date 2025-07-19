@@ -11,6 +11,7 @@ import { seedSampleData } from '@/lib/seed-data';
 import { useSync } from '@/lib/hooks/useSync';
 import { useAuth } from '@/lib/auth/useAuth';
 import { MUSCLE_GROUPS } from '@/lib/constants';
+import { MuscleGroupIcon, ActionIcon, UIIcon } from './components/ui/Icon';
 
 export default function HomePage() {
   const { isAuthenticated } = useAuth();
@@ -147,12 +148,19 @@ export default function HomePage() {
         setTodayExercises([]);
       }
       
-      // Get recent workouts (exclude active workout from recent list)
+      // Get recent workouts (include in-progress workouts)
       const oneWeekAgo = new Date();
       oneWeekAgo.setDate(oneWeekAgo.getDate() - 7);
       const workouts = await db.getWorkouts(oneWeekAgo, new Date());
-      const filteredWorkouts = workouts.filter(w => w.status !== 'in_progress');
-      setRecentWorkouts(filteredWorkouts.slice(0, 3));
+      // Sort by date, newest first, and show in-progress workouts at the top
+      const sortedWorkouts = workouts.sort((a, b) => {
+        // Prioritize in-progress workouts
+        if (a.status === 'in_progress' && b.status !== 'in_progress') return -1;
+        if (b.status === 'in_progress' && a.status !== 'in_progress') return 1;
+        // Then sort by date
+        return new Date(b.date).getTime() - new Date(a.date).getTime();
+      });
+      setRecentWorkouts(sortedWorkouts.slice(0, 3));
       
       // Calculate real stats from workout data
       await calculateStats(db, workouts);
@@ -236,6 +244,7 @@ export default function HomePage() {
         {/* Quick Stats */}
         <div className="grid grid-cols-2 gap-4">
           <Card variant="gradient" gradient="secondary" className="text-center">
+            <div className="text-xs opacity-75 font-medium mb-1">Weekly PR</div>
             <div className="text-xl font-bold">
               {stats.lastPR ? `${stats.lastPR.weight} lbs` : 'No PR'}
             </div>
@@ -270,7 +279,7 @@ export default function HomePage() {
                 <p className="text-orange-600 font-semibold mt-1">Workout in Progress</p>
               </div>
               <div className="w-10 h-10 bg-orange-500 rounded-lg flex items-center justify-center">
-                <span className="text-white text-lg">⏸️</span>
+                <ActionIcon name="pause" size={18} color="white" />
               </div>
             </div>
             
@@ -307,7 +316,7 @@ export default function HomePage() {
                 <p className="text-purple-600 font-semibold mt-1">{todayTemplate.name}</p>
               </div>
               <div className="w-10 h-10 bg-gradient-primary rounded-lg flex items-center justify-center">
-                <span className="text-white text-lg">💪</span>
+                <UIIcon name="workout" size={18} color="white" />
               </div>
             </div>
             
@@ -319,7 +328,11 @@ export default function HomePage() {
                 return (
                   <div key={exercise.id} className="flex items-center gap-3">
                     <div className="w-6 h-6 rounded-full flex items-center justify-center text-xs">
-                      {muscleGroupInfo.emoji}
+                      <MuscleGroupIcon 
+                        name={muscleGroupInfo.icon as any} 
+                        size={16} 
+                        color={muscleGroupInfo.color}
+                      />
                     </div>
                     <span className="font-medium text-gray-900 text-sm flex-1">{exercise.name}</span>
                     <span className="text-purple-600 font-semibold text-sm">{templateEx.targetSets} sets</span>
@@ -343,7 +356,9 @@ export default function HomePage() {
           </Card>
         ) : (
           <Card className="text-center py-8">
-            <div className="text-4xl mb-4">🏃‍♂️</div>
+            <div className="mb-4">
+              <UIIcon name="workout" size={48} color="#9CA3AF" />
+            </div>
             <h3 className="text-lg font-bold text-black mb-2">Rest Day</h3>
             <p className="text-gray-600 text-sm mb-4">No workout scheduled for today</p>
             <Button 
@@ -365,12 +380,21 @@ export default function HomePage() {
                 <Card 
                   key={workout.id}
                   className="cursor-pointer hover:bg-gray-50 transition-colors duration-150"
-                  onClick={() => window.location.href = `/history/${workout.id}`}
+                  onClick={() => {
+                    if (workout.status === 'in_progress') {
+                      // Resume the in-progress workout
+                      setWorkoutModalProps({ workoutId: workout.id });
+                      setShowWorkoutModal(true);
+                    } else {
+                      // View completed workout details
+                      window.location.href = `/history/${workout.id}`;
+                    }
+                  }}
                 >
                   <div className="flex justify-between items-center">
                     <div className="flex items-center gap-3">
                       <div className="w-10 h-10 bg-gray-100 rounded-lg flex items-center justify-center">
-                        <span className="text-gray-600 text-lg">📅</span>
+                        <UIIcon name="calendar" size={18} color="#6B7280" />
                       </div>
                       <div>
                         <p className="font-semibold text-gray-900">
@@ -390,15 +414,18 @@ export default function HomePage() {
                       </div>
                     </div>
                     <div className="text-2xl">
-                      {workout.status === 'completed' ? '✅' : 
-                       workout.status === 'ended_early' ? '⏹️' : '⏸️'}
+                      {workout.status === 'completed' ? <UIIcon name="checkmark" size={24} color="#10B981" /> : 
+                       workout.status === 'ended_early' ? <ActionIcon name="stop" size={24} color="#F59E0B" /> : 
+                       <ActionIcon name="pause" size={24} color="#EF4444" />}
                     </div>
                   </div>
                 </Card>
               ))
             ) : (
               <Card className="text-center py-6">
-                <div className="text-4xl mb-3">🏋️‍♂️</div>
+                <div className="mb-3">
+                  <UIIcon name="workout" size={48} color="#6B7280" />
+                </div>
                 <h3 className="text-lg font-bold text-black mb-2">Ready to Get Started?</h3>
                 <p className="text-gray-600 text-sm">No recent workouts yet</p>
               </Card>

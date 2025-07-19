@@ -5,6 +5,7 @@ import Card from '../components/ui/Card';
 import { WorkoutSession } from '@/lib/types';
 import { getDB } from '@/lib/storage/indexedDB';
 import { formatDate, calculateVolume } from '@/lib/utils';
+import { UIIcon, ActionIcon } from '../components/ui/Icon';
 
 export default function HistoryPage() {
   const [workouts, setWorkouts] = useState<WorkoutSession[]>([]);
@@ -64,7 +65,7 @@ export default function HistoryPage() {
     <div className="flex flex-col min-h-screen">
       {/* Header */}
       <header className="bg-gradient-primary text-white p-6 safe-top">
-        <h1 className="text-2xl font-bold">📖 Workout History</h1>
+        <h1 className="text-2xl font-bold">Workout History</h1>
         <p className="text-white/80 mt-1">Your complete workout log</p>
       </header>
 
@@ -104,9 +105,10 @@ export default function HistoryPage() {
                     <div className="flex justify-between items-start">
                       <div>
                         <p className="font-semibold flex items-center gap-2">
-                          📅 {formatDate(new Date(workout.date), 'EEE, MMM d')}
-                          {isCompleted && <span className="text-green-600">✅</span>}
-                          {isEndedEarly && <span className="text-orange-600">⏹️</span>}
+                          <UIIcon name="calendar" size={16} className="mr-1" />
+                          {formatDate(new Date(workout.date), 'EEE, MMM d')}
+                          {isCompleted && <UIIcon name="checkmark" size={16} color="#10B981" />}
+                          {isEndedEarly && <ActionIcon name="stop" size={16} color="#F59E0B" />}
                         </p>
                         <p className="text-sm text-gray-600">
                           {workout.exercises.length} exercises • {duration}
