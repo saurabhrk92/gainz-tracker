@@ -14,6 +14,7 @@ export default function HomePage() {
   const { isAuthenticated } = useAuth();
   const { syncStatus, lastSyncTime } = useSync();
   const [todayTemplate, setTodayTemplate] = useState<WorkoutTemplate | null>(null);
+  const [activeWorkout, setActiveWorkout] = useState<WorkoutSession | null>(null);
   const [recentWorkouts, setRecentWorkouts] = useState<WorkoutSession[]>([]);
   const [stats, setStats] = useState({
     streak: 0,
@@ -33,16 +34,55 @@ export default function HomePage() {
     try {
       const db = await getDB();
       
+      // Check for active workout first
+      const currentWorkout = await db.getActiveWorkout();
+      
+      // If there's an active workout, verify it's from today and template still exists
+      if (currentWorkout) {
+        const workoutDate = new Date(currentWorkout.date);
+        const today = new Date();
+        const isToday = workoutDate.toDateString() === today.toDateString();
+        
+        if (!isToday) {
+          // Workout is from a previous day, mark as ended_early
+          console.log('Workout from previous day found, marking as ended_early');
+          await db.updateWorkout(currentWorkout.id, {
+            status: 'ended_early',
+            duration: Math.floor((Date.now() - workoutDate.getTime()) / 1000)
+          });
+          setActiveWorkout(null);
+        } else {
+          // Workout is from today, verify template still exists
+          try {
+            const template = await db.getTemplateById(currentWorkout.templateId);
+            if (template) {
+              setActiveWorkout(currentWorkout);
+            } else {
+              // Template was deleted, remove the orphaned workout
+              console.log('Template deleted, removing orphaned workout');
+              await db.deleteWorkout(currentWorkout.id);
+              setActiveWorkout(null);
+            }
+          } catch (error) {
+            // Template not found, clean up the workout
+            console.log('Template not found, cleaning up workout');
+            await db.deleteWorkout(currentWorkout.id);
+            setActiveWorkout(null);
+          }
+        }
+      }
+      
       // Get today's template
       const dayOfWeek = ['sunday', 'monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday'][new Date().getDay()];
       const template = await db.getTemplateByDay(dayOfWeek as any);
       setTodayTemplate(template);
       
-      // Get recent workouts
+      // Get recent workouts (exclude active workout from recent list)
       const oneWeekAgo = new Date();
       oneWeekAgo.setDate(oneWeekAgo.getDate() - 7);
       const workouts = await db.getWorkouts(oneWeekAgo, new Date());
-      setRecentWorkouts(workouts.slice(0, 3));
+      const filteredWorkouts = workouts.filter(w => w.status !== 'in_progress');
+      setRecentWorkouts(filteredWorkouts.slice(0, 3));
       
       // Calculate stats
       // This is simplified - you'd calculate real stats from workout data
@@ -61,6 +101,12 @@ export default function HomePage() {
   const startWorkout = () => {
     if (todayTemplate) {
       window.location.href = `/workout?templateId=${todayTemplate.id}`;
+    }
+  };
+
+  const resumeWorkout = () => {
+    if (activeWorkout) {
+      window.location.href = `/workout?workoutId=${activeWorkout.id}`;
     }
   };
 
@@ -138,7 +184,44 @@ export default function HomePage() {
         </div>
 
         {/* Today's Workout */}
-        {todayTemplate ? (
+        {activeWorkout ? (
+          <Card className="space-y-4">
+            <div className="flex justify-between items-start">
+              <div>
+                <h2 className="text-lg font-bold text-black">Resume Workout</h2>
+                <p className="text-orange-600 font-semibold mt-1">Workout in Progress</p>
+              </div>
+              <div className="w-10 h-10 bg-orange-500 rounded-lg flex items-center justify-center">
+                <span className="text-white text-lg">⏸️</span>
+              </div>
+            </div>
+            
+            <div className="bg-orange-50 rounded-lg p-3 space-y-2">
+              <div className="flex justify-between items-center">
+                <span className="text-sm font-semibold text-orange-700">Progress</span>
+                <span className="text-sm text-orange-600">
+                  {activeWorkout.exercises.reduce((total, ex) => total + ex.sets.length, 0)} sets completed
+                </span>
+              </div>
+              <div className="w-full bg-orange-200 rounded-full h-2">
+                <div 
+                  className="bg-orange-500 h-2 rounded-full transition-all duration-300"
+                  style={{ 
+                    width: `${Math.min(100, (activeWorkout.exercises.reduce((total, ex) => total + ex.sets.length, 0) / activeWorkout.exercises.reduce((total, ex) => total + ex.targetSets, 0)) * 100)}%` 
+                  }}
+                />
+              </div>
+            </div>
+            
+            <Button 
+              onClick={resumeWorkout}
+              className="w-full"
+              size="lg"
+            >
+              Resume Workout
+            </Button>
+          </Card>
+        ) : todayTemplate ? (
           <Card className="space-y-4">
             <div className="flex justify-between items-start">
               <div>
@@ -196,7 +279,11 @@ export default function HomePage() {
           <div className="space-y-3">
             {recentWorkouts.length > 0 ? (
               recentWorkouts.map((workout) => (
-                <Card key={workout.id}>
+                <Card 
+                  key={workout.id}
+                  className="cursor-pointer hover:bg-gray-50 transition-colors duration-150"
+                  onClick={() => window.location.href = `/history/${workout.id}`}
+                >
                   <div className="flex justify-between items-center">
                     <div className="flex items-center gap-3">
                       <div className="w-10 h-10 bg-gray-100 rounded-lg flex items-center justify-center">
@@ -209,14 +296,19 @@ export default function HomePage() {
                         <div className="flex items-center gap-2 text-sm text-gray-500 mt-0.5">
                           <span>{workout.exercises.length} exercises</span>
                           <span>•</span>
-                          <span className={workout.status === 'completed' ? 'text-green-600' : 'text-yellow-600'}>
-                            {workout.status === 'completed' ? 'Completed' : 'In Progress'}
+                          <span className={
+                            workout.status === 'completed' ? 'text-green-600' : 
+                            workout.status === 'ended_early' ? 'text-orange-600' : 'text-yellow-600'
+                          }>
+                            {workout.status === 'completed' ? 'Completed' : 
+                             workout.status === 'ended_early' ? 'Ended Early' : 'In Progress'}
                           </span>
                         </div>
                       </div>
                     </div>
                     <div className="text-2xl">
-                      {workout.status === 'completed' ? '✅' : '⏸️'}
+                      {workout.status === 'completed' ? '✅' : 
+                       workout.status === 'ended_early' ? '⏹️' : '⏸️'}
                     </div>
                   </div>
                 </Card>
@@ -227,6 +319,20 @@ export default function HomePage() {
                 <h3 className="text-lg font-bold text-black mb-2">Ready to Get Started?</h3>
                 <p className="text-gray-600 text-sm">No recent workouts yet</p>
               </Card>
+            )}
+            
+            {/* View All History Button */}
+            {recentWorkouts.length > 0 && (
+              <div className="pt-3">
+                <Button
+                  variant="glass"
+                  onClick={() => window.location.href = '/history'}
+                  className="w-full"
+                  size="sm"
+                >
+                  View All History
+                </Button>
+              </div>
             )}
           </div>
         </div>

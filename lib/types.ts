@@ -72,7 +72,7 @@ export interface WorkoutSession {
   id: string;
   templateId: string;
   date: Date;
-  status: 'in_progress' | 'completed' | 'paused';
+  status: 'in_progress' | 'completed' | 'paused' | 'ended_early';
   exercises: SessionExercise[];
   duration: number; // in seconds
   totalVolume: number;

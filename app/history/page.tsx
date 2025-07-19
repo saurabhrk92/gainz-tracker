@@ -32,6 +32,11 @@ export default function HistoryPage() {
 
   const getWorkoutDuration = (workout: WorkoutSession): string => {
     if (workout.status === 'in_progress') return 'In progress';
+    if (workout.status === 'ended_early') {
+      const minutes = Math.floor(workout.duration / 60);
+      const timeStr = minutes < 60 ? `${minutes}m` : `${Math.floor(minutes / 60)}h ${minutes % 60}m`;
+      return `${timeStr} (ended early)`;
+    }
     const minutes = Math.floor(workout.duration / 60);
     if (minutes < 60) return `${minutes}m`;
     const hours = Math.floor(minutes / 60);
@@ -87,6 +92,7 @@ export default function HistoryPage() {
               const volume = getWorkoutVolume(workout);
               const duration = getWorkoutDuration(workout);
               const isCompleted = workout.status === 'completed';
+              const isEndedEarly = workout.status === 'ended_early';
               
               return (
                 <Card 
@@ -100,6 +106,7 @@ export default function HistoryPage() {
                         <p className="font-semibold flex items-center gap-2">
                           📅 {formatDate(new Date(workout.date), 'EEE, MMM d')}
                           {isCompleted && <span className="text-green-600">✅</span>}
+                          {isEndedEarly && <span className="text-orange-600">⏹️</span>}
                         </p>
                         <p className="text-sm text-gray-600">
                           {workout.exercises.length} exercises • {duration}

@@ -19,6 +19,7 @@ function WorkoutPageContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const templateId = searchParams.get('templateId');
+  const workoutId = searchParams.get('workoutId');
   
   const [template, setTemplate] = useState<WorkoutTemplate | null>(null);
   const [exercises, setExercises] = useState<Exercise[]>([]);
@@ -36,64 +37,111 @@ function WorkoutPageContent() {
 
   useEffect(() => {
     loadWorkoutData();
-  }, [templateId]);
+  }, [templateId, workoutId]);
 
   const loadWorkoutData = async () => {
-    if (!templateId) {
+    if (!templateId && !workoutId) {
       router.push('/');
       return;
     }
 
     try {
       const db = await getDB();
-      const templateData = await db.getTemplateById(templateId);
       
-      if (!templateData) {
-        router.push('/');
-        return;
-      }
+      if (workoutId) {
+        // Resuming existing workout
+        const existingWorkout = await db.getWorkoutById(workoutId);
+        if (!existingWorkout) {
+          router.push('/');
+          return;
+        }
+        
+        // Load template for the workout
+        const templateData = await db.getTemplateById(existingWorkout.templateId);
+        if (!templateData) {
+          router.push('/');
+          return;
+        }
+        
+        setTemplate(templateData);
+        setWorkoutSessionId(workoutId);
+        setWorkoutStartTime(new Date(existingWorkout.date));
+        setIsWorkoutTimerActive(true);
+        
+        // Restore existing sets
+        const restoredSets: { [exerciseId: string]: Array<{ reps: number; weight: number }> } = {};
+        existingWorkout.exercises.forEach(sessionEx => {
+          restoredSets[sessionEx.exerciseId] = sessionEx.sets;
+        });
+        setSets(restoredSets);
+        
+        // Find current exercise index (first incomplete exercise)
+        let currentIndex = 0;
+        for (let i = 0; i < templateData.exercises.length; i++) {
+          const templateEx = templateData.exercises[i];
+          const completedSets = restoredSets[templateEx.exerciseId]?.length || 0;
+          if (completedSets < templateEx.targetSets) {
+            currentIndex = i;
+            break;
+          }
+          if (i === templateData.exercises.length - 1) {
+            // All exercises completed, should auto-complete workout
+            currentIndex = i;
+          }
+        }
+        setCurrentExerciseIndex(currentIndex);
+        
+      } else if (templateId) {
+        // Starting new workout
+        const templateData = await db.getTemplateById(templateId);
+        
+        if (!templateData) {
+          router.push('/');
+          return;
+        }
 
-      setTemplate(templateData);
+        setTemplate(templateData);
+        
+        // Initialize sets tracking for new workout
+        const initialSets: { [exerciseId: string]: Array<{ reps: number; weight: number }> } = {};
+        templateData.exercises.forEach(ex => {
+          initialSets[ex.exerciseId] = [];
+        });
+        setSets(initialSets);
+        setWorkoutStartTime(new Date());
+        
+        // Create workout session in database (but not marked as in_progress yet)
+        const sessionId = crypto.randomUUID();
+        const workoutSession = {
+          id: sessionId,
+          templateId: templateId!,
+          date: new Date(),
+          status: 'paused' as const, // Start as paused, mark in_progress when first set logged
+          exercises: templateData.exercises.map(templateEx => ({
+            exerciseId: templateEx.exerciseId,
+            targetSets: templateEx.targetSets,
+            targetReps: templateEx.targetReps,
+            completedSets: 0,
+            sets: []
+          })),
+          duration: 0,
+          totalVolume: 0
+        };
+        
+        await db.createWorkout(workoutSession);
+        setWorkoutSessionId(sessionId);
+      }
       
-      // Load exercise data for each exercise in the template
-      const exerciseData = await Promise.all(
-        templateData.exercises.map(async (templateEx) => {
-          return await db.getExerciseById(templateEx.exerciseId);
-        })
-      );
-      
-      setExercises(exerciseData.filter(Boolean) as Exercise[]);
-      setWorkoutStartTime(new Date());
-      setIsWorkoutTimerActive(true);
-      
-      // Initialize sets tracking
-      const initialSets: { [exerciseId: string]: Array<{ reps: number; weight: number }> } = {};
-      templateData.exercises.forEach(ex => {
-        initialSets[ex.exerciseId] = [];
-      });
-      setSets(initialSets);
-      
-      // Create workout session in database
-      const sessionId = crypto.randomUUID();
-      const workoutSession = {
-        id: sessionId,
-        templateId: templateId!,
-        date: new Date(),
-        status: 'in_progress' as const,
-        exercises: templateData.exercises.map(templateEx => ({
-          exerciseId: templateEx.exerciseId,
-          targetSets: templateEx.targetSets,
-          targetReps: templateEx.targetReps,
-          completedSets: 0,
-          sets: []
-        })),
-        duration: 0,
-        totalVolume: 0
-      };
-      
-      await db.createWorkout(workoutSession);
-      setWorkoutSessionId(sessionId);
-      console.log('Created workout session:', sessionId);
+      // Load exercise data for the current template
+      const currentTemplate = template || await db.getTemplateById(workoutId ? (await db.getWorkoutById(workoutId))!.templateId : templateId!);
+      if (currentTemplate) {
+        const exerciseData = await Promise.all(
+          currentTemplate.exercises.map(async (templateEx) => {
+            return await db.getExerciseById(templateEx.exerciseId);
+          })
+        );
+        setExercises(exerciseData.filter(Boolean) as Exercise[]);
+      }
       
     } catch (error) {
       console.error('Failed to load workout data:', error);
@@ -143,12 +191,22 @@ function WorkoutPageContent() {
           return total + ex.sets.reduce((exTotal, set) => exTotal + (set.reps * set.weight), 0);
         }, 0);
         
+        // Check if this is the first set ever logged (workout should be marked as in_progress)
+        const totalSetsLogged = updatedExercises.reduce((total, ex) => total + ex.sets.length, 0);
+        const shouldMarkInProgress = currentWorkout.status === 'paused' && totalSetsLogged === 1;
+        
         // Update the workout in database
         await db.updateWorkout(workoutSessionId, {
           exercises: updatedExercises,
           duration: Math.floor((Date.now() - workoutStartTime!.getTime()) / 1000),
-          totalVolume
+          totalVolume,
+          ...(shouldMarkInProgress && { status: 'in_progress' as const })
         });
+        
+        if (shouldMarkInProgress) {
+          console.log('Workout marked as in_progress after first set logged');
+          setIsWorkoutTimerActive(true);
+        }
         
         console.log('Saved set to database:', { exerciseId, set: newSet, totalSets: updatedSets.length });
       }
@@ -174,6 +232,12 @@ function WorkoutPageContent() {
         setShowRestTimer(false); // Cancel rest timer when moving to next exercise
         setIsProgressing(false); // Reset progression flag
       }, 500); // Longer delay to prevent race conditions
+    } else if (updatedSets.length >= targetSets && currentExerciseIndex === exercises.length - 1) {
+      // Last exercise completed, auto-complete workout
+      console.log('All exercises completed! Auto-completing workout...');
+      setTimeout(async () => {
+        await handleCompleteWorkout();
+      }, 1000);
     } else {
       // Only start rest timer if we're not moving to next exercise
       const currentExercise = exercises[currentExerciseIndex];
@@ -184,6 +248,19 @@ function WorkoutPageContent() {
         setRestTime(restTimeToUse);
         setShowRestTimer(true);
       }, 200);
+    }
+    
+    // Check if ALL exercises have completed their target sets (alternative completion check)
+    const allExercisesCompleted = template.exercises.every((templateEx, index) => {
+      const exerciseSets = index === currentExerciseIndex ? updatedSets : (sets[templateEx.exerciseId] || []);
+      return exerciseSets.length >= templateEx.targetSets;
+    });
+    
+    if (allExercisesCompleted) {
+      console.log('All target sets completed across all exercises! Auto-completing workout...');
+      setTimeout(async () => {
+        await handleCompleteWorkout();
+      }, 1500);
     }
   };
 
@@ -223,6 +300,39 @@ function WorkoutPageContent() {
       router.push('/history');
     } catch (error) {
       console.error('Failed to complete workout:', error);
+    }
+  };
+
+  const handleEndWorkoutEarly = async () => {
+    if (!workoutSessionId) return;
+
+    // Show confirmation dialog
+    const confirmed = confirm(
+      'Are you sure you want to end this workout early? This workout will be marked as ended and cannot be resumed.'
+    );
+    
+    if (!confirmed) return;
+    
+    try {
+      const db = await getDB();
+      
+      // Calculate volume for completed sets only
+      const totalVolume = Object.values(sets).reduce((total, exerciseSets) => {
+        return total + exerciseSets.reduce((exTotal, set) => exTotal + (set.reps * set.weight), 0);
+      }, 0);
+      
+      // Update workout status to ended_early
+      await db.updateWorkout(workoutSessionId, {
+        status: 'ended_early',
+        duration: Math.floor((Date.now() - workoutStartTime!.getTime()) / 1000),
+        totalVolume
+      });
+      
+      console.log('Workout ended early:', workoutSessionId);
+      router.push('/history');
+    } catch (error) {
+      console.error('Failed to end workout early:', error);
+      alert('Failed to end workout. Please try again.');
     }
   };
 
@@ -339,14 +449,16 @@ function WorkoutPageContent() {
                       <div className="flex items-center gap-4">
                         <span className="text-sm font-medium">{set.reps} reps</span>
                         <span className="text-sm font-medium">{set.weight} lbs</span>
-                        <Button
-                          variant="glass"
-                          size="sm"
-                          onClick={() => handlePlateCalculator(set.weight)}
-                          className="text-xs"
-                        >
-                          🧮
-                        </Button>
+                        {currentExercise.type === 'barbell' && (
+                          <Button
+                            variant="glass"
+                            size="sm"
+                            onClick={() => handlePlateCalculator(set.weight)}
+                            className="text-xs"
+                          >
+                            🧮
+                          </Button>
+                        )}
                       </div>
                     </div>
                   ))}
@@ -384,15 +496,15 @@ function WorkoutPageContent() {
           </Button>
         </div>
 
-        {/* Complete Workout */}
+        {/* Workout Actions */}
         {currentSets.length > 0 && (
           <Button
-            onClick={handleCompleteWorkout}
-            variant="glass"
+            onClick={handleEndWorkoutEarly}
+            variant="secondary"
             className="w-full"
-            size="lg"
+            size="sm"
           >
-            ✅ Complete Workout
+            ⏹️ End Workout Early
           </Button>
         )}
 

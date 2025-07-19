@@ -9,6 +9,7 @@ const navItems = [
   { href: '/', label: 'Home', icon: '🏠' },
   { href: '/templates', label: 'Templates', icon: '📋' },
   { href: '/exercises', label: 'Exercises', icon: '💪' },
+  { href: '/history', label: 'History', icon: '📖' },
   { href: '/progress', label: 'Progress', icon: '📊' },
   { href: '/settings', label: 'Settings', icon: '⚙️' },
 ];

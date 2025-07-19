@@ -226,9 +226,17 @@ export class IndexedDBService {
     this.ensureDb();
     const transaction = this.db!.transaction(['workouts'], 'readonly');
     const store = transaction.objectStore('workouts');
-    const index = store.index('status');
-    const workouts = await this.promisifyRequest(index.getAll('in_progress'));
-    return workouts[0] || null;
+    const allWorkouts = await this.promisifyRequest(store.getAll());
+    
+    // Find workouts that are either in_progress or paused (potentially resumable)
+    const activeWorkouts = allWorkouts.filter(workout => 
+      workout.status === 'in_progress' || workout.status === 'paused'
+    );
+    
+    // Sort by date, most recent first
+    activeWorkouts.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
+    
+    return activeWorkouts[0] || null;
   }
 
   async updateWorkout(id: string, updates: Partial<WorkoutSession>): Promise<void> {
