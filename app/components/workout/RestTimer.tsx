@@ -4,6 +4,7 @@ import { useState, useEffect, useRef } from 'react';
 import Button from '../ui/Button';
 import Card from '../ui/Card';
 import { ActionIcon, UIIcon } from '../ui/Icon';
+import { showTimerNotification, vibratePhone, requestNotificationPermission } from '@/lib/utils/notifications';
 
 interface RestTimerProps {
   duration: number; // in seconds
@@ -21,6 +22,9 @@ export default function RestTimer({ duration, onComplete, onCancel }: RestTimerP
     setTimeLeft(duration);
     setIsActive(true); // Auto-start timer when component mounts
     setIsCompleted(false);
+    
+    // Request notification permission when timer starts
+    requestNotificationPermission();
   }, [duration]);
 
   useEffect(() => {
@@ -32,20 +36,23 @@ export default function RestTimer({ duration, onComplete, onCancel }: RestTimerP
             setIsCompleted(true);
             onComplete?.();
             
-            // Play notification sound (if available)
+            // Multi-modal notification: vibration + browser notification + audio
+            console.log('Rest timer complete - triggering notifications');
+            
+            // 1. Vibrate phone (works even when app is in background)
+            vibratePhone([500, 200, 500, 200, 500]);
+            
+            // 2. Show browser notification (works when app is in background)
+            showTimerNotification('Rest timer finished! Time to get back to your workout.');
+            
+            // 3. Play notification sound (if available and app is in foreground)
             try {
               const audio = new Audio('/notification.mp3');
               audio.play().catch(() => {
-                // Fallback: vibration on mobile
-                if ('vibrate' in navigator) {
-                  navigator.vibrate([200, 100, 200]);
-                }
+                console.log('Audio notification failed, but vibration and notification should still work');
               });
-            } catch {
-              // Fallback: vibration on mobile
-              if ('vibrate' in navigator) {
-                navigator.vibrate([200, 100, 200]);
-              }
+            } catch (error) {
+              console.log('Audio not available, relying on vibration and notifications');
             }
             
             return 0;
