@@ -1,20 +1,39 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth/next';
-import { google } from 'googleapis';
 import { authOptions } from '@/lib/auth/authOptions';
+import { createAuthenticatedDriveClient } from '@/lib/auth/tokenRefresh';
 
 export async function GET(request: NextRequest) {
   try {
     const session = await getServerSession(authOptions);
     
+    console.log('Session debug:', {
+      hasSession: !!session,
+      hasAccessToken: !!session?.accessToken,
+      hasRefreshToken: !!session?.refreshToken,
+      user: session?.user?.email
+    });
+    
     if (!session?.accessToken) {
+      console.log('Missing access token - session:', JSON.stringify(session, null, 2));
       return NextResponse.json({ error: 'Not authenticated' }, { status: 401 });
     }
 
-    // Set up Google Drive client
-    const auth = new google.auth.OAuth2();
-    auth.setCredentials({ access_token: session.accessToken });
-    const drive = google.drive({ version: 'v3', auth });
+    // Set up Google Drive client - use refresh if available, otherwise fallback to simple auth
+    let drive;
+    if (session.refreshToken) {
+      const { drive: refreshDrive } = await createAuthenticatedDriveClient({
+        accessToken: session.accessToken,
+        refreshToken: session.refreshToken,
+      });
+      drive = refreshDrive;
+    } else {
+      // Fallback to simple auth without refresh
+      const { google } = await import('googleapis');
+      const auth = new google.auth.OAuth2();
+      auth.setCredentials({ access_token: session.accessToken });
+      drive = google.drive({ version: 'v3', auth });
+    }
 
     // Ensure backup folder exists
     const folderId = await ensureBackupFolder(drive);
@@ -48,10 +67,21 @@ export async function DELETE(request: NextRequest) {
 
     const { fileId } = await request.json();
 
-    // Set up Google Drive client
-    const auth = new google.auth.OAuth2();
-    auth.setCredentials({ access_token: session.accessToken });
-    const drive = google.drive({ version: 'v3', auth });
+    // Set up Google Drive client - use refresh if available, otherwise fallback to simple auth
+    let drive;
+    if (session.refreshToken) {
+      const { drive: refreshDrive } = await createAuthenticatedDriveClient({
+        accessToken: session.accessToken,
+        refreshToken: session.refreshToken,
+      });
+      drive = refreshDrive;
+    } else {
+      // Fallback to simple auth without refresh
+      const { google } = await import('googleapis');
+      const auth = new google.auth.OAuth2();
+      auth.setCredentials({ access_token: session.accessToken });
+      drive = google.drive({ version: 'v3', auth });
+    }
 
     await drive.files.delete({
       fileId,

@@ -1,3 +1,5 @@
+import { showToast } from '@/lib/utils/toast';
+
 // Client-side service that calls our API endpoints
 export class GoogleDriveService {
   constructor() {
@@ -15,6 +17,7 @@ export class GoogleDriveService {
       });
 
       if (response.status === 401) {
+        showToast('Please connect to Google Drive in Settings to backup your data', 'warning');
         throw new Error('Authentication expired. Please sign in again.');
       }
 
@@ -39,6 +42,7 @@ export class GoogleDriveService {
       const response = await fetch('/api/sync/restore');
 
       if (response.status === 401) {
+        showToast('Please connect to Google Drive in Settings to backup your data', 'warning');
         throw new Error('Authentication expired. Please sign in again.');
       }
 
@@ -305,6 +309,12 @@ export class SyncService {
           console.log(`Background sync completed: ${triggerReason}`);
         }).catch((error) => {
           console.error(`Background sync failed for ${triggerReason}:`, error);
+          
+          // Only show toast for auth errors, not all sync failures
+          if (error.message && error.message.includes('Authentication expired')) {
+            // Already shown toast in GoogleDriveService, no need to show again
+          }
+          
           // Update sync metadata with error status
           db.updateSyncMeta({
             lastSyncTime: now,

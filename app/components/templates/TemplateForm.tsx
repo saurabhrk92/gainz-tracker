@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import React, { useState, useEffect } from 'react';
 import { WorkoutTemplate, Exercise, MuscleGroup, WeekDay, TemplateExercise } from '@/lib/types';
 import { getDB } from '@/lib/storage/indexedDB';
 import { MUSCLE_GROUPS, WEEK_DAYS } from '@/lib/constants';
@@ -32,7 +32,6 @@ export default function TemplateForm({ template, onSuccess, onCancel, onUpdate }
   const [selectedExercises, setSelectedExercises] = useState<number[]>([]);
   const [showSupersetOptions, setShowSupersetOptions] = useState(false);
   const [autoSaving, setAutoSaving] = useState(false);
-  const [draggedIndex, setDraggedIndex] = useState<number | null>(null);
 
   useEffect(() => {
     loadExercises();
@@ -158,46 +157,17 @@ export default function TemplateForm({ template, onSuccess, onCancel, onUpdate }
     );
   };
 
-  const handleDragStart = (e: React.DragEvent, index: number) => {
-    setDraggedIndex(index);
-    e.dataTransfer.effectAllowed = 'move';
-  };
-
-  const handleDragOver = (e: React.DragEvent) => {
-    e.preventDefault();
-    e.dataTransfer.dropEffect = 'move';
-  };
-
-  const handleDrop = (e: React.DragEvent, dropIndex: number) => {
-    e.preventDefault();
-    
-    if (draggedIndex === null || draggedIndex === dropIndex) {
-      setDraggedIndex(null);
-      return;
-    }
-
+  const swapExercises = (index1: number, index2: number) => {
     const newTemplateExercises = [...templateExercises];
-    const draggedItem = newTemplateExercises[draggedIndex];
-    
-    // Remove dragged item
-    newTemplateExercises.splice(draggedIndex, 1);
-    
-    // Insert at new position
-    const insertIndex = draggedIndex < dropIndex ? dropIndex - 1 : dropIndex;
-    newTemplateExercises.splice(insertIndex, 0, draggedItem);
+    [newTemplateExercises[index1], newTemplateExercises[index2]] = [newTemplateExercises[index2], newTemplateExercises[index1]];
     
     setTemplateExercises(newTemplateExercises);
-    setDraggedIndex(null);
     setSelectedExercises([]); // Clear selections after reorder
     
     // Auto-save after reordering
     if (template) {
       autoSaveTemplate(newTemplateExercises);
     }
-  };
-
-  const handleDragEnd = () => {
-    setDraggedIndex(null);
   };
 
   const autoSaveTemplate = async (exercises: TemplateExercise[], updatedName?: string, updatedMuscleGroup?: MuscleGroup | 'full_body', updatedDay?: WeekDay) => {
@@ -481,7 +451,28 @@ export default function TemplateForm({ template, onSuccess, onCancel, onUpdate }
             });
             
             return allGroups.map((group, groupIndex) => {
-              if (group.type === 'superset' && group.supersetId) {
+              // Render swap button between groups (not within supersets)
+              const swapButton = groupIndex < allGroups.length - 1 ? (
+                <div key={`swap-${groupIndex}`} className="flex justify-center py-2">
+                  <Button
+                    type="button"
+                    onClick={() => {
+                      const currentGroupFirstIndex = group.exercises[0].index;
+                      const nextGroupFirstIndex = allGroups[groupIndex + 1].exercises[0].index;
+                      swapExercises(currentGroupFirstIndex, nextGroupFirstIndex);
+                    }}
+                    size="sm"
+                    variant="secondary"
+                    className="px-3 py-1 text-xs bg-gray-100 hover:bg-gray-200 border border-gray-300 rounded-full"
+                    title="Swap with next exercise"
+                  >
+                    ⇅ Swap
+                  </Button>
+                </div>
+              ) : null;
+
+              const groupElement = (() => {
+                if (group.type === 'superset' && group.supersetId) {
                 const firstExercise = group.exercises[0].templateExercise;
                 const supersetGroup = templateExercises.filter(ex => ex.supersetGroup === group.supersetId);
                 
@@ -603,8 +594,8 @@ export default function TemplateForm({ template, onSuccess, onCancel, onUpdate }
                       })}
                     </div>
                   </div>
-                );
-              } else {
+                  );
+                } else {
                 // Individual exercise
                 const { templateExercise, index } = group.exercises[0];
                 const exercise = availableExercises.find(e => e.id === templateExercise.exerciseId);
@@ -614,19 +605,9 @@ export default function TemplateForm({ template, onSuccess, onCancel, onUpdate }
                 const isSelected = selectedExercises.includes(index);
                 
                 return (
-                  <div
-                    key={index}
-                    draggable
-                    onDragStart={(e) => handleDragStart(e, index)}
-                    onDragOver={handleDragOver}
-                    onDrop={(e) => handleDrop(e, index)}
-                    onDragEnd={handleDragEnd}
-                    className={`transition-all duration-200 ${
-                      draggedIndex === index ? 'opacity-50 scale-95' : ''
-                    }`}
-                  >
+                  <div key={index} className="relative">
                     <Card 
-                      className={`relative overflow-hidden border-l-4 cursor-move ${
+                      className={`relative overflow-hidden border-l-4 ${
                         isSelected ? 'ring-2 ring-blue-400 bg-blue-50' : ''
                       }`} 
                       style={{ borderLeftColor: muscleGroupInfo.color }}
@@ -634,17 +615,6 @@ export default function TemplateForm({ template, onSuccess, onCancel, onUpdate }
                     <div className="space-y-4">
                       <div className="flex justify-between items-start">
                         <div className="flex items-center gap-3">
-                          {/* Drag handle */}
-                          <div className="text-gray-400 hover:text-gray-600 cursor-grab active:cursor-grabbing">
-                            <svg width="12" height="16" viewBox="0 0 12 16" fill="currentColor">
-                              <circle cx="2" cy="2" r="1.5"/>
-                              <circle cx="2" cy="8" r="1.5"/>
-                              <circle cx="2" cy="14" r="1.5"/>
-                              <circle cx="10" cy="2" r="1.5"/>
-                              <circle cx="10" cy="8" r="1.5"/>
-                              <circle cx="10" cy="14" r="1.5"/>
-                            </svg>
-                          </div>
                           
                           {/* Selection checkbox */}
                           <div className="flex items-center">
@@ -738,7 +708,15 @@ export default function TemplateForm({ template, onSuccess, onCancel, onUpdate }
                   </Card>
                   </div>
                 );
-              }
+                }
+              })();
+
+              return (
+                <React.Fragment key={`group-${groupIndex}`}>
+                  {groupElement}
+                  {swapButton}
+                </React.Fragment>
+              );
             });
           })()}
 

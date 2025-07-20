@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth/next';
-import { google } from 'googleapis';
 import { authOptions } from '@/lib/auth/authOptions';
+import { createAuthenticatedDriveClient } from '@/lib/auth/tokenRefresh';
 
 export async function GET(request: NextRequest) {
   try {
@@ -19,11 +19,22 @@ export async function GET(request: NextRequest) {
     const fileId = url.searchParams.get('fileId');
     console.log('File ID requested:', fileId);
 
-    // Set up Google Drive client
+    // Set up Google Drive client - use refresh if available, otherwise fallback to simple auth
     console.log('Setting up Google Drive client');
-    const auth = new google.auth.OAuth2();
-    auth.setCredentials({ access_token: session.accessToken });
-    const drive = google.drive({ version: 'v3', auth });
+    let drive;
+    if (session.refreshToken) {
+      const { drive: refreshDrive } = await createAuthenticatedDriveClient({
+        accessToken: session.accessToken,
+        refreshToken: session.refreshToken,
+      });
+      drive = refreshDrive;
+    } else {
+      // Fallback to simple auth without refresh
+      const { google } = await import('googleapis');
+      const auth = new google.auth.OAuth2();
+      auth.setCredentials({ access_token: session.accessToken });
+      drive = google.drive({ version: 'v3', auth });
+    }
 
     if (fileId) {
       // Read specific backup content
