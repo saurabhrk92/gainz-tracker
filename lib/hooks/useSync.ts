@@ -19,14 +19,18 @@ export function useSync() {
     prevAuthenticatedRef.current = isAuthenticated;
 
     if (isNowAuthenticated) {
-      setSyncService(new SyncService());
+      const newSyncService = new SyncService();
+      setSyncService(newSyncService);
       
       // Check if this is a fresh login (transition from false to true)
       if (wasAuthenticated === false && isNowAuthenticated === true) {
-        handleFreshLogin();
+        // Use the new sync service directly to avoid race condition
+        handleFreshLogin(newSyncService);
       }
     } else {
       setSyncService(null);
+      // Clear session storage when signing out so fresh login can be detected next time
+      sessionStorage.removeItem('gainz_restore_attempted');
     }
   }, [isAuthenticated]);
 
@@ -44,8 +48,9 @@ export function useSync() {
     }
   }, [syncService]);
 
-  const handleFreshLogin = async () => {
-    if (!syncService) return;
+  const handleFreshLogin = async (syncServiceToUse?: SyncService) => {
+    const serviceToUse = syncServiceToUse || syncService;
+    if (!serviceToUse) return;
 
     // Check if we've already restored on this session to prevent duplicate restorations
     const sessionKey = 'gainz_restore_attempted';
@@ -61,13 +66,13 @@ export function useSync() {
       setSyncStatus('syncing');
       
       // Check if there's a backup available
-      const backupData = await syncService.getBackupList();
+      const backupData = await serviceToUse.getBackupList();
       
       if (backupData && backupData.length > 0) {
         console.log(`Found ${backupData.length} backups, restoring latest...`);
         
         // Restore from the latest backup
-        await syncService.restoreFromBackup();
+        await serviceToUse.restoreFromBackup();
         
         setLastSyncTime(new Date());
         setSyncStatus('success');
