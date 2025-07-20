@@ -180,11 +180,14 @@ export class SyncService {
         throw new Error('No backup found');
       }
 
+      // Handle nested data structure - actual data might be in backupData.data.data
+      const actualData = backupData.data?.data || backupData.data;
+      
       console.log('Backup data received:', {
-        hasData: !!backupData.data,
-        exercises: backupData.data?.exercises?.length || 0,
-        templates: backupData.data?.templates?.length || 0,
-        workouts: backupData.data?.workouts?.length || 0
+        hasData: !!actualData,
+        exercises: actualData?.exercises?.length || 0,
+        templates: actualData?.templates?.length || 0,
+        workouts: actualData?.workouts?.length || 0
       });
 
       // Restore to local database
@@ -195,7 +198,7 @@ export class SyncService {
       await db.clearAll();
       
       console.log('Importing backup data...');
-      await db.importData(backupData.data);
+      await db.importData(actualData);
       
       // Verify data was imported
       const importedData = await db.exportData();

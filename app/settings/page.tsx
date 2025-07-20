@@ -105,6 +105,7 @@ export default function SettingsPage() {
       setLoading(true);
       await syncService.restoreFromBackup(backupToRestore);
       setSyncStatus('Data restored successfully!');
+      
       // Refresh the page to show restored data
       setTimeout(() => {
         window.location.reload();
