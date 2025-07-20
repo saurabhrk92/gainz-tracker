@@ -15,6 +15,7 @@ import SetInputForm from '../components/workout/SetInputForm';
 import Button from '../components/ui/Button';
 import Card from '../components/ui/Card';
 import Modal from '../components/ui/Modal';
+import ConfirmModal from '../components/ui/ConfirmModal';
 import { MuscleGroupIcon } from '../components/ui/Icon';
 
 function WorkoutPageContent() {
@@ -37,6 +38,7 @@ function WorkoutPageContent() {
   const [currentWeight, setCurrentWeight] = useState(0);
   const [isProgressing, setIsProgressing] = useState(false);
   const [workoutSessionId, setWorkoutSessionId] = useState<string | null>(null);
+  const [showEndWorkoutConfirm, setShowEndWorkoutConfirm] = useState(false);
 
   useEffect(() => {
     loadWorkoutData();
@@ -314,15 +316,14 @@ function WorkoutPageContent() {
     }
   };
 
-  const handleEndWorkoutEarly = async () => {
+  const handleEndWorkoutEarly = () => {
     if (!workoutSessionId) return;
+    setShowEndWorkoutConfirm(true);
+  };
 
-    // Show confirmation dialog
-    const confirmed = confirm(
-      'Are you sure you want to end this workout early? This workout will be marked as ended and cannot be resumed.'
-    );
-    
-    if (!confirmed) return;
+  const confirmEndWorkout = async () => {
+    if (!workoutSessionId) return;
+    setShowEndWorkoutConfirm(false);
     
     try {
       const db = await getDB();
@@ -628,6 +629,18 @@ function WorkoutPageContent() {
           onClose={() => setShowPlateCalculator(false)}
         />
       </Modal>
+
+      {/* End Workout Early Confirmation */}
+      <ConfirmModal
+        isOpen={showEndWorkoutConfirm}
+        onClose={() => setShowEndWorkoutConfirm(false)}
+        onConfirm={confirmEndWorkout}
+        title="End Workout Early"
+        message="Are you sure you want to end this workout early? This workout will be marked as ended and cannot be resumed."
+        confirmText="End Workout"
+        cancelText="Keep Going"
+        variant="warning"
+      />
     </div>
   );
 }

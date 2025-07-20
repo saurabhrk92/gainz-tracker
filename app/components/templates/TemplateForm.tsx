@@ -215,7 +215,7 @@ export default function TemplateForm({ template, onSuccess, onCancel }: Template
       };
 
       await db.updateTemplate(template.id, templateData);
-      // Note: No sync trigger on auto-save to prevent excessive backups
+      syncWorkoutEvent('workout_template_modified');
       
       // Brief feedback that save occurred
       setTimeout(() => setAutoSaving(false), 500);
