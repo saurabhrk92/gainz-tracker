@@ -336,11 +336,12 @@ export class IndexedDBService {
   async clearAll(): Promise<void> {
     this.ensureDb();
     
-    const transaction = this.db!.transaction(['exercises', 'templates', 'workouts'], 'readwrite');
+    const transaction = this.db!.transaction(['exercises', 'templates', 'workouts', 'sync_meta'], 'readwrite');
     
     await this.promisifyRequest(transaction.objectStore('exercises').clear());
     await this.promisifyRequest(transaction.objectStore('templates').clear());
     await this.promisifyRequest(transaction.objectStore('workouts').clear());
+    await this.promisifyRequest(transaction.objectStore('sync_meta').clear());
   }
 }
 

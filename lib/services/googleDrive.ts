@@ -180,13 +180,30 @@ export class SyncService {
         throw new Error('No backup found');
       }
 
+      console.log('Backup data received:', {
+        hasData: !!backupData.data,
+        exercises: backupData.data?.exercises?.length || 0,
+        templates: backupData.data?.templates?.length || 0,
+        workouts: backupData.data?.workouts?.length || 0
+      });
+
       // Restore to local database
       const { getDB } = await import('@/lib/storage/indexedDB');
       const db = await getDB();
       
-      // Clear existing data and import backup
+      console.log('Clearing existing data...');
       await db.clearAll();
+      
+      console.log('Importing backup data...');
       await db.importData(backupData.data);
+      
+      // Verify data was imported
+      const importedData = await db.exportData();
+      console.log('Data imported successfully:', {
+        exercises: importedData.exercises?.length || 0,
+        templates: importedData.templates?.length || 0,
+        workouts: importedData.workouts?.length || 0
+      });
       
       // Update sync metadata
       await db.updateSyncMeta({
@@ -194,6 +211,8 @@ export class SyncService {
         fileId: backupId || 'latest',
         lastSyncStatus: 'success',
       });
+      
+      console.log('Backup restoration completed successfully');
     } catch (error) {
       console.error('Failed to restore backup:', error);
       throw error;
