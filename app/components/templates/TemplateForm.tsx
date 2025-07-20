@@ -199,7 +199,7 @@ export default function TemplateForm({ template, onSuccess, onCancel }: Template
     setDraggedIndex(null);
   };
 
-  const autoSaveTemplate = async (exercises: TemplateExercise[]) => {
+  const autoSaveTemplate = async (exercises: TemplateExercise[], updatedName?: string, updatedMuscleGroup?: MuscleGroup | 'full_body', updatedDay?: WeekDay) => {
     if (!template || !name.trim() || exercises.length === 0) return;
     
     try {
@@ -208,9 +208,9 @@ export default function TemplateForm({ template, onSuccess, onCancel }: Template
       
       const templateData: WorkoutTemplate = {
         ...template,
-        name: name.trim(),
-        muscleGroup,
-        day,
+        name: (updatedName ?? name).trim(),
+        muscleGroup: updatedMuscleGroup ?? muscleGroup,
+        day: updatedDay ?? day,
         exercises,
       };
 
@@ -229,21 +229,21 @@ export default function TemplateForm({ template, onSuccess, onCancel }: Template
   const handleNameChange = (newName: string) => {
     setName(newName);
     if (template && newName.trim()) {
-      autoSaveTemplate(templateExercises);
+      autoSaveTemplate(templateExercises, newName);
     }
   };
 
   const handleMuscleGroupChange = (newMuscleGroup: MuscleGroup | 'full_body') => {
     setMuscleGroup(newMuscleGroup);
     if (template) {
-      autoSaveTemplate(templateExercises);
+      autoSaveTemplate(templateExercises, undefined, newMuscleGroup);
     }
   };
 
   const handleDayChange = (newDay: WeekDay) => {
     setDay(newDay);
     if (template) {
-      autoSaveTemplate(templateExercises);
+      autoSaveTemplate(templateExercises, undefined, undefined, newDay);
     }
   };
 
