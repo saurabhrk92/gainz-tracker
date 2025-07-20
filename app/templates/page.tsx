@@ -43,6 +43,11 @@ export default function TemplatesPage() {
     loadTemplates(); // Refresh the list
   };
 
+  const handleTemplateUpdate = (template: WorkoutTemplate) => {
+    // Just refresh the list, don't close the modal (for auto-save)
+    loadTemplates();
+  };
+
   const handleEditTemplate = (template: WorkoutTemplate) => {
     setEditingTemplate(template);
     setShowCreateModal(true);
@@ -251,6 +256,7 @@ export default function TemplatesPage() {
         <TemplateForm
           template={editingTemplate || undefined}
           onSuccess={handleTemplateSuccess}
+          onUpdate={handleTemplateUpdate}
           onCancel={() => {
             setShowCreateModal(false);
             setEditingTemplate(null);

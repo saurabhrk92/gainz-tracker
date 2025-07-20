@@ -15,9 +15,10 @@ interface TemplateFormProps {
   template?: WorkoutTemplate;
   onSuccess: (template: WorkoutTemplate) => void;
   onCancel: () => void;
+  onUpdate?: (template: WorkoutTemplate) => void; // For auto-save updates
 }
 
-export default function TemplateForm({ template, onSuccess, onCancel }: TemplateFormProps) {
+export default function TemplateForm({ template, onSuccess, onCancel, onUpdate }: TemplateFormProps) {
   const { syncWorkoutEvent } = useSync();
   const [name, setName] = useState(template?.name || '');
   const [muscleGroup, setMuscleGroup] = useState<MuscleGroup | 'full_body'>(template?.muscleGroup || 'chest');
@@ -216,6 +217,11 @@ export default function TemplateForm({ template, onSuccess, onCancel }: Template
 
       await db.updateTemplate(template.id, templateData);
       syncWorkoutEvent('workout_template_modified');
+      
+      // Notify parent component of the update (for refreshing template list)
+      if (onUpdate) {
+        onUpdate(templateData);
+      }
       
       // Brief feedback that save occurred
       setTimeout(() => setAutoSaving(false), 500);
