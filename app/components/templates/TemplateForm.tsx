@@ -30,6 +30,8 @@ export default function TemplateForm({ template, onSuccess, onCancel }: Template
   const [loadingExercises, setLoadingExercises] = useState(true);
   const [selectedExercises, setSelectedExercises] = useState<number[]>([]);
   const [showSupersetOptions, setShowSupersetOptions] = useState(false);
+  const [autoSaving, setAutoSaving] = useState(false);
+  const [draggedIndex, setDraggedIndex] = useState<number | null>(null);
 
   useEffect(() => {
     loadExercises();
@@ -52,18 +54,31 @@ export default function TemplateForm({ template, onSuccess, onCancel }: Template
     
     const defaultExercise = availableExercises[0];
     
-    setTemplateExercises([
+    const updated = [
       ...templateExercises,
       {
         exerciseId: defaultExercise.id,
         targetSets: 3,
         restTime: defaultExercise.defaultRestTime,
       }
-    ]);
+    ];
+    
+    setTemplateExercises(updated);
+    
+    // Auto-save after adding exercise
+    if (template) {
+      autoSaveTemplate(updated);
+    }
   };
 
   const removeExercise = (index: number) => {
-    setTemplateExercises(templateExercises.filter((_, i) => i !== index));
+    const updated = templateExercises.filter((_, i) => i !== index);
+    setTemplateExercises(updated);
+    
+    // Auto-save after removing exercise
+    if (template) {
+      autoSaveTemplate(updated);
+    }
   };
 
   const updateExercise = (index: number, field: keyof TemplateExercise, value: any) => {
@@ -79,6 +94,11 @@ export default function TemplateForm({ template, onSuccess, onCancel }: Template
     }
     
     setTemplateExercises(updated);
+    
+    // Auto-save after update
+    if (template) {
+      autoSaveTemplate(updated);
+    }
   };
 
   const createSupersetFromSelected = (restBetweenExercises: number = 15) => {
@@ -101,17 +121,32 @@ export default function TemplateForm({ template, onSuccess, onCancel }: Template
     setTemplateExercises(updated);
     setSelectedExercises([]);
     setShowSupersetOptions(false);
+    
+    // Auto-save after creating superset
+    if (template) {
+      autoSaveTemplate(updated);
+    }
   };
 
   const removeSupersetFromExercise = (index: number) => {
     const updated = [...templateExercises];
     updated[index] = removeFromSuperset(updated[index]);
     setTemplateExercises(updated);
+    
+    // Auto-save after removing from superset
+    if (template) {
+      autoSaveTemplate(updated);
+    }
   };
 
   const deleteEntireSuperset = (supersetId: string) => {
     const updated = templateExercises.filter(ex => ex.supersetGroup !== supersetId);
     setTemplateExercises(updated);
+    
+    // Auto-save after deleting superset
+    if (template) {
+      autoSaveTemplate(updated);
+    }
   };
 
   const toggleExerciseSelection = (index: number) => {
@@ -120,6 +155,96 @@ export default function TemplateForm({ template, onSuccess, onCancel }: Template
         ? prev.filter(i => i !== index)
         : [...prev, index]
     );
+  };
+
+  const handleDragStart = (e: React.DragEvent, index: number) => {
+    setDraggedIndex(index);
+    e.dataTransfer.effectAllowed = 'move';
+  };
+
+  const handleDragOver = (e: React.DragEvent) => {
+    e.preventDefault();
+    e.dataTransfer.dropEffect = 'move';
+  };
+
+  const handleDrop = (e: React.DragEvent, dropIndex: number) => {
+    e.preventDefault();
+    
+    if (draggedIndex === null || draggedIndex === dropIndex) {
+      setDraggedIndex(null);
+      return;
+    }
+
+    const newTemplateExercises = [...templateExercises];
+    const draggedItem = newTemplateExercises[draggedIndex];
+    
+    // Remove dragged item
+    newTemplateExercises.splice(draggedIndex, 1);
+    
+    // Insert at new position
+    const insertIndex = draggedIndex < dropIndex ? dropIndex - 1 : dropIndex;
+    newTemplateExercises.splice(insertIndex, 0, draggedItem);
+    
+    setTemplateExercises(newTemplateExercises);
+    setDraggedIndex(null);
+    setSelectedExercises([]); // Clear selections after reorder
+    
+    // Auto-save after reordering
+    if (template) {
+      autoSaveTemplate(newTemplateExercises);
+    }
+  };
+
+  const handleDragEnd = () => {
+    setDraggedIndex(null);
+  };
+
+  const autoSaveTemplate = async (exercises: TemplateExercise[]) => {
+    if (!template || !name.trim() || exercises.length === 0) return;
+    
+    try {
+      setAutoSaving(true);
+      const db = await getDB();
+      
+      const templateData: WorkoutTemplate = {
+        ...template,
+        name: name.trim(),
+        muscleGroup,
+        day,
+        exercises,
+      };
+
+      await db.updateTemplate(template.id, templateData);
+      syncWorkoutEvent('workout_template_modified');
+      
+      // Brief feedback that save occurred
+      setTimeout(() => setAutoSaving(false), 500);
+    } catch (error) {
+      console.error('Auto-save failed:', error);
+      setAutoSaving(false);
+    }
+  };
+
+  // Auto-save when name, muscle group, or day changes
+  const handleNameChange = (newName: string) => {
+    setName(newName);
+    if (template && newName.trim()) {
+      autoSaveTemplate(templateExercises);
+    }
+  };
+
+  const handleMuscleGroupChange = (newMuscleGroup: MuscleGroup | 'full_body') => {
+    setMuscleGroup(newMuscleGroup);
+    if (template) {
+      autoSaveTemplate(templateExercises);
+    }
+  };
+
+  const handleDayChange = (newDay: WeekDay) => {
+    setDay(newDay);
+    if (template) {
+      autoSaveTemplate(templateExercises);
+    }
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -194,7 +319,7 @@ export default function TemplateForm({ template, onSuccess, onCancel }: Template
           <input
             type="text"
             value={name}
-            onChange={(e) => setName(e.target.value)}
+            onChange={(e) => handleNameChange(e.target.value)}
             placeholder="e.g., Chest & Triceps"
             className="w-full p-4 bg-white/95 backdrop-blur-md rounded-2xl border border-white/20 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent shadow-lg transition-all duration-200"
             required
@@ -208,7 +333,7 @@ export default function TemplateForm({ template, onSuccess, onCancel }: Template
             </label>
             <select
               value={muscleGroup}
-              onChange={(e) => setMuscleGroup(e.target.value as MuscleGroup | 'full_body')}
+              onChange={(e) => handleMuscleGroupChange(e.target.value as MuscleGroup | 'full_body')}
               className="w-full p-4 bg-white/95 backdrop-blur-md rounded-2xl border border-white/20 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent shadow-lg transition-all duration-200"
             >
               <option value="full_body">Full Body</option>
@@ -226,7 +351,7 @@ export default function TemplateForm({ template, onSuccess, onCancel }: Template
             </label>
             <select
               value={day}
-              onChange={(e) => setDay(e.target.value as WeekDay)}
+              onChange={(e) => handleDayChange(e.target.value as WeekDay)}
               className="w-full p-4 bg-white/95 backdrop-blur-md rounded-2xl border border-white/20 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent shadow-lg transition-all duration-200"
             >
               {WEEK_DAYS.map((dayInfo) => (
@@ -242,7 +367,15 @@ export default function TemplateForm({ template, onSuccess, onCancel }: Template
       {/* Exercises */}
       <div>
         <div className="flex justify-between items-center mb-4">
-          <h3 className="text-lg font-bold text-gray-800 font-display">Template Exercises</h3>
+          <div className="flex items-center gap-3">
+            <h3 className="text-lg font-bold text-gray-800 font-display">Template Exercises</h3>
+            {autoSaving && (
+              <div className="flex items-center gap-2 text-sm text-green-600">
+                <div className="w-4 h-4 animate-spin rounded-full border-2 border-green-600 border-t-transparent"></div>
+                <span>Saving...</span>
+              </div>
+            )}
+          </div>
           <div className="flex gap-2">
             {selectedExercises.length > 1 && (
               <Button
@@ -475,16 +608,38 @@ export default function TemplateForm({ template, onSuccess, onCancel }: Template
                 const isSelected = selectedExercises.includes(index);
                 
                 return (
-                  <Card 
-                    key={index} 
-                    className={`relative overflow-hidden border-l-4 transition-all duration-200 ${
-                      isSelected ? 'ring-2 ring-blue-400 bg-blue-50' : ''
-                    }`} 
-                    style={{ borderLeftColor: muscleGroupInfo.color }}
+                  <div
+                    key={index}
+                    draggable
+                    onDragStart={(e) => handleDragStart(e, index)}
+                    onDragOver={handleDragOver}
+                    onDrop={(e) => handleDrop(e, index)}
+                    onDragEnd={handleDragEnd}
+                    className={`transition-all duration-200 ${
+                      draggedIndex === index ? 'opacity-50 scale-95' : ''
+                    }`}
                   >
+                    <Card 
+                      className={`relative overflow-hidden border-l-4 cursor-move ${
+                        isSelected ? 'ring-2 ring-blue-400 bg-blue-50' : ''
+                      }`} 
+                      style={{ borderLeftColor: muscleGroupInfo.color }}
+                    >
                     <div className="space-y-4">
                       <div className="flex justify-between items-start">
                         <div className="flex items-center gap-3">
+                          {/* Drag handle */}
+                          <div className="text-gray-400 hover:text-gray-600 cursor-grab active:cursor-grabbing">
+                            <svg width="12" height="16" viewBox="0 0 12 16" fill="currentColor">
+                              <circle cx="2" cy="2" r="1.5"/>
+                              <circle cx="2" cy="8" r="1.5"/>
+                              <circle cx="2" cy="14" r="1.5"/>
+                              <circle cx="10" cy="2" r="1.5"/>
+                              <circle cx="10" cy="8" r="1.5"/>
+                              <circle cx="10" cy="14" r="1.5"/>
+                            </svg>
+                          </div>
+                          
                           {/* Selection checkbox */}
                           <div className="flex items-center">
                             <input
@@ -575,6 +730,7 @@ export default function TemplateForm({ template, onSuccess, onCancel }: Template
                       </div>
                     </div>
                   </Card>
+                  </div>
                 );
               }
             });
@@ -598,15 +754,17 @@ export default function TemplateForm({ template, onSuccess, onCancel }: Template
           variant="secondary"
           className="flex-1"
         >
-          Cancel
+          {template ? 'Done' : 'Cancel'}
         </Button>
-        <Button
-          type="submit"
-          disabled={loading || !name.trim() || templateExercises.length === 0}
-          className="flex-1"
-        >
-          {loading ? 'Saving...' : template ? 'Update Template' : 'Create Template'}
-        </Button>
+        {!template && (
+          <Button
+            type="submit"
+            disabled={loading || !name.trim() || templateExercises.length === 0}
+            className="flex-1"
+          >
+            {loading ? 'Creating...' : 'Create Template'}
+          </Button>
+        )}
       </div>
     </form>
   );
