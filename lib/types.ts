@@ -61,7 +61,6 @@ export interface WorkoutTemplate {
 export interface TemplateExercise {
   exerciseId: string;
   targetSets: number;
-  targetReps: string; // e.g., "8-12" or "10"
   restTime?: number;
   order?: number;
   notes?: string;
@@ -83,7 +82,6 @@ export interface WorkoutSession {
 export interface SessionExercise {
   exerciseId: string;
   targetSets: number;
-  targetReps: string;
   completedSets: number;
   sets: Array<{ reps: number; weight: number }>;
 }

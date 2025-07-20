@@ -121,7 +121,6 @@ function WorkoutPageContent() {
           exercises: templateData.exercises.map(templateEx => ({
             exerciseId: templateEx.exerciseId,
             targetSets: templateEx.targetSets,
-            targetReps: templateEx.targetReps,
             completedSets: 0,
             sets: []
           })),
@@ -434,7 +433,6 @@ function WorkoutPageContent() {
               <div className="text-right">
                 <div className="text-xs text-gray-600">Target</div>
                 <div className="font-bold text-gray-800">{templateExercise.targetSets} sets</div>
-                <div className="text-xs text-gray-600">{templateExercise.targetReps} reps</div>
               </div>
             </div>
 
@@ -540,7 +538,7 @@ function WorkoutPageContent() {
                   <div className="flex-1">
                     <p className="font-medium text-gray-800">{exercise?.name || 'Unknown Exercise'}</p>
                     <p className="text-sm text-gray-600">
-                      {exerciseSets.length}/{templateEx.targetSets} sets • {templateEx.targetReps} reps
+                      {exerciseSets.length}/{templateEx.targetSets} sets
                     </p>
                   </div>
                   <div className="text-lg">

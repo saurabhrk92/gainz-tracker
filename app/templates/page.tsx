@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react';
 import Card from '../components/ui/Card';
 import Button from '../components/ui/Button';
 import Modal from '../components/ui/Modal';
+import ConfirmModal from '../components/ui/ConfirmModal';
 import TemplateForm from '../components/templates/TemplateForm';
 import { WorkoutTemplate } from '@/lib/types';
 import { getDB } from '@/lib/storage/indexedDB';
@@ -16,6 +17,9 @@ export default function TemplatesPage() {
   const [loading, setLoading] = useState(true);
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [editingTemplate, setEditingTemplate] = useState<WorkoutTemplate | null>(null);
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+  const [deleteTemplateId, setDeleteTemplateId] = useState<string | null>(null);
+  const [deleteMessage, setDeleteMessage] = useState('');
 
   useEffect(() => {
     loadTemplates();
@@ -57,18 +61,29 @@ export default function TemplatesPage() {
         confirmMessage = `This template has been used in ${usedInWorkouts.length} workout(s). Deleting it will not affect your workout history, but you won't be able to use this template again. Are you sure you want to delete it?`;
       }
       
-      const confirmed = confirm(confirmMessage);
-      if (!confirmed) return;
+      setDeleteTemplateId(templateId);
+      setDeleteMessage(confirmMessage);
+      setShowDeleteConfirm(true);
+    } catch (error) {
+      console.error('Failed to delete template:', error);
+    }
+  };
 
-      console.log('Attempting to delete template:', templateId);
-      await db.deleteTemplate(templateId);
+  const confirmDeleteTemplate = async () => {
+    if (!deleteTemplateId) return;
+    
+    try {
+      const db = await getDB();
+      console.log('Attempting to delete template:', deleteTemplateId);
+      await db.deleteTemplate(deleteTemplateId);
       console.log('Template deleted successfully');
       
       loadTemplates(); // Refresh the list
-      alert('Template deleted successfully!');
     } catch (error) {
       console.error('Failed to delete template:', error);
-      alert(`Failed to delete template: ${error instanceof Error ? error.message : 'Unknown error'}. Please try again.`);
+    } finally {
+      setDeleteTemplateId(null);
+      setDeleteMessage('');
     }
   };
 
@@ -90,7 +105,7 @@ export default function TemplatesPage() {
       loadTemplates(); // Refresh the list
     } catch (error) {
       console.error('Failed to toggle template:', error);
-      alert('Failed to update template. Please try again.');
+      console.error('Failed to update template. Please try again.');
     }
   };
 
@@ -242,6 +257,18 @@ export default function TemplatesPage() {
           }}
         />
       </Modal>
+
+      {/* Delete Confirmation Modal */}
+      <ConfirmModal
+        isOpen={showDeleteConfirm}
+        onClose={() => setShowDeleteConfirm(false)}
+        onConfirm={confirmDeleteTemplate}
+        title="Delete Template"
+        message={deleteMessage}
+        confirmText="Delete"
+        cancelText="Cancel"
+        variant="danger"
+      />
     </div>
   );
 }

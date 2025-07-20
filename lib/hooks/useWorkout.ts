@@ -36,7 +36,6 @@ export function useWorkout() {
       const sessionExercises: SessionExercise[] = template.exercises.map(te => ({
         exerciseId: te.exerciseId,
         targetSets: te.targetSets,
-        targetReps: te.targetReps,
         completedSets: 0,
         sets: [],
       }));

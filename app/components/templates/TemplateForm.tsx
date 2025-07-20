@@ -18,7 +18,6 @@ interface TemplateFormProps {
 interface TemplateExercise {
   exerciseId: string;
   targetSets: number;
-  targetReps: string; // e.g., "8-12" or "10"
   restTime?: number;
 }
 
@@ -53,13 +52,14 @@ export default function TemplateForm({ template, onSuccess, onCancel }: Template
   const addExercise = () => {
     if (availableExercises.length === 0) return;
     
+    const defaultExercise = availableExercises[0];
+    
     setTemplateExercises([
       ...templateExercises,
       {
-        exerciseId: availableExercises[0].id,
+        exerciseId: defaultExercise.id,
         targetSets: 3,
-        targetReps: '8-12',
-        restTime: 60,
+        restTime: defaultExercise.defaultRestTime,
       }
     ]);
   };
@@ -71,6 +71,15 @@ export default function TemplateForm({ template, onSuccess, onCancel }: Template
   const updateExercise = (index: number, field: keyof TemplateExercise, value: any) => {
     const updated = [...templateExercises];
     updated[index] = { ...updated[index], [field]: value };
+    
+    // If exercise changes, update rest time to match the new exercise's default
+    if (field === 'exerciseId') {
+      const newExercise = availableExercises.find(ex => ex.id === value);
+      if (newExercise) {
+        updated[index].restTime = newExercise.defaultRestTime;
+      }
+    }
+    
     setTemplateExercises(updated);
   };
 
@@ -242,7 +251,7 @@ export default function TemplateForm({ template, onSuccess, onCancel }: Template
                     </Button>
                   </div>
 
-                  <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                     <div>
                       <label className="block text-xs font-semibold text-gray-600 mb-1">
                         Exercise
@@ -277,18 +286,6 @@ export default function TemplateForm({ template, onSuccess, onCancel }: Template
                       />
                     </div>
 
-                    <div>
-                      <label className="block text-xs font-semibold text-gray-600 mb-1">
-                        Reps
-                      </label>
-                      <input
-                        type="text"
-                        value={templateExercise.targetReps}
-                        onChange={(e) => updateExercise(index, 'targetReps', e.target.value)}
-                        placeholder="8-12"
-                        className="w-full p-3 bg-white/80 rounded-xl border border-gray-200 focus:outline-none focus:ring-2 focus:ring-primary-500"
-                      />
-                    </div>
 
                     <div>
                       <label className="block text-xs font-semibold text-gray-600 mb-1">

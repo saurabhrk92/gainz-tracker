@@ -403,22 +403,16 @@ export default function HomePage() {
               <UIIcon name="workout" size={48} color="#9CA3AF" />
             </div>
             <h3 className="text-lg font-bold text-black mb-2">Rest Day</h3>
-            <p className="text-gray-600 text-sm mb-4">No workout scheduled for today</p>
-            {routineTemplates.length > 0 ? (
-              <Button 
-                onClick={openRoutineSelector}
-                size="md"
-              >
-                Run Routine Workout
-              </Button>
-            ) : (
-              <Button 
-                onClick={() => window.location.href = '/templates'}
-                variant="secondary"
-                size="md"
-              >
-                Create Template
-              </Button>
+            <p className="text-gray-600 text-sm">No workout scheduled for today</p>
+            {routineTemplates.length > 0 && (
+              <div className="mt-4">
+                <Button 
+                  onClick={openRoutineSelector}
+                  size="md"
+                >
+                  Run Routine Workout
+                </Button>
+              </div>
             )}
           </Card>
         )}

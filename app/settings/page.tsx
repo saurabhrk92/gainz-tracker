@@ -5,6 +5,7 @@ import { useAuth } from '@/lib/auth/useAuth';
 import { SyncService } from '@/lib/services/googleDrive';
 import Card from '../components/ui/Card';
 import Button from '../components/ui/Button';
+import ConfirmModal from '../components/ui/ConfirmModal';
 import { formatDate } from '@/lib/utils';
 
 export default function SettingsPage() {
@@ -13,6 +14,9 @@ export default function SettingsPage() {
   const [backups, setBackups] = useState<Array<{ id: string; name: string; createdTime: string }>>([]);
   const [loading, setLoading] = useState(false);
   const [syncStatus, setSyncStatus] = useState<string>('');
+  const [showRestoreConfirm, setShowRestoreConfirm] = useState(false);
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+  const [pendingBackupId, setPendingBackupId] = useState<string | undefined>(undefined);
 
   useEffect(() => {
     if (isAuthenticated) {
@@ -55,37 +59,59 @@ export default function SettingsPage() {
   const handleBackup = async () => {
     if (!syncService) return;
     
-    try {
-      setLoading(true);
-      setSyncStatus('Creating backup...');
-      await syncService.uploadBackup('manual');
-      setSyncStatus('Backup created successfully!');
-      await loadBackups();
-    } catch (error) {
-      console.error('Backup failed:', error);
-      setSyncStatus('Backup failed');
-    } finally {
-      setLoading(false);
-    }
+    // Show immediate feedback and run backup in background
+    setSyncStatus('Creating backup...');
+    
+    // Use setTimeout to ensure UI updates immediately
+    setTimeout(async () => {
+      try {
+        await syncService.uploadBackup('manual');
+        setSyncStatus('Backup created successfully!');
+        await loadBackups();
+        
+        // Clear success message after 3 seconds
+        setTimeout(() => {
+          setSyncStatus('');
+        }, 3000);
+      } catch (error) {
+        console.error('Backup failed:', error);
+        setSyncStatus('Backup failed');
+        
+        // Clear error message after 5 seconds
+        setTimeout(() => {
+          setSyncStatus('');
+        }, 5000);
+      }
+    }, 100); // Small delay to ensure UI responsiveness
   };
 
   const handleRestore = async (backupId?: string) => {
     if (!syncService) return;
     
-    const confirmed = confirm('This will replace all your current data. Are you sure?');
-    if (!confirmed) return;
+    setPendingBackupId(backupId);
+    setShowRestoreConfirm(true);
+  };
+
+  const confirmRestore = async () => {
+    if (!syncService) return;
+    
+    const backupToRestore = pendingBackupId;
+    
+    // Show immediate feedback and clear modal
+    setSyncStatus('Restoring data...');
+    setPendingBackupId(undefined);
     
     try {
       setLoading(true);
-      setSyncStatus('Restoring data...');
-      await syncService.restoreFromBackup(backupId);
+      await syncService.restoreFromBackup(backupToRestore);
       setSyncStatus('Data restored successfully!');
       // Refresh the page to show restored data
-      window.location.reload();
+      setTimeout(() => {
+        window.location.reload();
+      }, 1000);
     } catch (error) {
       console.error('Restore failed:', error);
       setSyncStatus('Restore failed');
-    } finally {
       setLoading(false);
     }
   };
@@ -93,20 +119,40 @@ export default function SettingsPage() {
   const handleDeleteBackup = async (backupId: string) => {
     if (!syncService) return;
     
-    const confirmed = confirm('Are you sure you want to delete this backup?');
-    if (!confirmed) return;
+    setPendingBackupId(backupId);
+    setShowDeleteConfirm(true);
+  };
+
+  const confirmDeleteBackup = async () => {
+    if (!syncService || !pendingBackupId) return;
     
-    try {
-      setLoading(true);
-      await syncService.deleteBackup(backupId);
-      await loadBackups();
-      setSyncStatus('Backup deleted');
-    } catch (error) {
-      console.error('Delete failed:', error);
-      setSyncStatus('Delete failed');
-    } finally {
-      setLoading(false);
-    }
+    const backupToDelete = pendingBackupId;
+    
+    // Show immediate feedback and clear modal
+    setSyncStatus('Deleting backup...');
+    setPendingBackupId(undefined);
+    
+    // Run delete asynchronously
+    setTimeout(async () => {
+      try {
+        await syncService.deleteBackup(backupToDelete);
+        await loadBackups();
+        setSyncStatus('Backup deleted');
+        
+        // Clear message after 3 seconds
+        setTimeout(() => {
+          setSyncStatus('');
+        }, 3000);
+      } catch (error) {
+        console.error('Delete failed:', error);
+        setSyncStatus('Delete failed');
+        
+        // Clear error message after 5 seconds
+        setTimeout(() => {
+          setSyncStatus('');
+        }, 5000);
+      }
+    }, 100);
   };
 
   return (
@@ -186,11 +232,10 @@ export default function SettingsPage() {
                 <div className="flex gap-3">
                   <Button
                     onClick={handleBackup}
-                    disabled={loading}
                     className="flex-1"
                     size="md"
                   >
-                    {loading ? 'Creating...' : 'Create Backup'}
+                    Create Backup
                   </Button>
                   
                   <Button
@@ -221,38 +266,38 @@ export default function SettingsPage() {
             
             <div className="space-y-3">
               {backups.map((backup, index) => (
-                <div key={backup.id} className="bg-gray-50 rounded-lg p-4">
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-3">
-                      <div className="w-10 h-10 bg-purple-100 rounded-lg flex items-center justify-center">
-                        <span className="text-purple-600 font-bold text-sm">#{index + 1}</span>
-                      </div>
-                      <div>
-                        <p className="font-semibold text-black">
-                          {formatDate(new Date(backup.createdTime), 'MMM d, yyyy h:mm a')}
-                        </p>
-                        <p className="text-sm text-gray-600">{backup.name}</p>
-                      </div>
+                <div key={backup.id} className="bg-gray-50 rounded-lg p-4 space-y-3">
+                  <div className="flex items-center gap-3">
+                    <div className="w-10 h-10 bg-purple-100 rounded-lg flex items-center justify-center">
+                      <span className="text-purple-600 font-bold text-sm">#{index + 1}</span>
                     </div>
-                    
-                    <div className="flex gap-2">
-                      <Button
-                        variant="glass"
-                        size="sm"
-                        onClick={() => handleRestore(backup.id)}
-                        disabled={loading}
-                      >
-                        Restore
-                      </Button>
-                      <Button
-                        variant="danger"
-                        size="sm"
-                        onClick={() => handleDeleteBackup(backup.id)}
-                        disabled={loading}
-                      >
-                        Delete
-                      </Button>
+                    <div>
+                      <p className="font-semibold text-black">
+                        {formatDate(new Date(backup.createdTime), 'MMM d, yyyy h:mm a')}
+                      </p>
+                      <p className="text-sm text-gray-600">{backup.name}</p>
                     </div>
+                  </div>
+                  
+                  <div className="flex gap-2 justify-center">
+                    <Button
+                      variant="glass"
+                      size="sm"
+                      onClick={() => handleRestore(backup.id)}
+                      disabled={loading}
+                      className="px-4 py-1 text-xs"
+                    >
+                      Restore
+                    </Button>
+                    <Button
+                      variant="danger"
+                      size="sm"
+                      onClick={() => handleDeleteBackup(backup.id)}
+                      disabled={loading}
+                      className="px-4 py-1 text-xs"
+                    >
+                      Delete
+                    </Button>
                   </div>
                 </div>
               ))}
@@ -286,6 +331,30 @@ export default function SettingsPage() {
           </div>
         </Card>
       </main>
+
+      {/* Restore Confirmation Modal */}
+      <ConfirmModal
+        isOpen={showRestoreConfirm}
+        onClose={() => setShowRestoreConfirm(false)}
+        onConfirm={confirmRestore}
+        title="Restore Backup"
+        message="This will replace all your current data. Are you sure?"
+        confirmText="Restore"
+        cancelText="Cancel"
+        variant="warning"
+      />
+
+      {/* Delete Backup Confirmation Modal */}
+      <ConfirmModal
+        isOpen={showDeleteConfirm}
+        onClose={() => setShowDeleteConfirm(false)}
+        onConfirm={confirmDeleteBackup}
+        title="Delete Backup"
+        message="Are you sure you want to delete this backup?"
+        confirmText="Delete"
+        cancelText="Cancel"
+        variant="danger"
+      />
     </div>
   );
 }

@@ -5,6 +5,7 @@ import Card from '../components/ui/Card';
 import Button from '../components/ui/Button';
 import Input from '../components/ui/Input';
 import Modal from '../components/ui/Modal';
+import ConfirmModal from '../components/ui/ConfirmModal';
 import ExerciseForm from '../components/exercises/ExerciseForm';
 import { Exercise, MuscleGroup } from '@/lib/types';
 import { getDB } from '@/lib/storage/indexedDB';
@@ -21,6 +22,9 @@ export default function ExercisesPage() {
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [showEditModal, setShowEditModal] = useState(false);
   const [editingExercise, setEditingExercise] = useState<Exercise | null>(null);
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+  const [deleteExerciseId, setDeleteExerciseId] = useState<string | null>(null);
+  const [deleteMessage, setDeleteMessage] = useState('');
 
   useEffect(() => {
     loadExercises();
@@ -72,6 +76,53 @@ export default function ExercisesPage() {
     setShowEditModal(false);
     setEditingExercise(null);
     loadExercises(); // Refresh the list
+  };
+
+  const handleDeleteClick = async (exercise: Exercise) => {
+    try {
+      const db = await getDB();
+      
+      // Check if this exercise is used in any workouts
+      const workouts = await db.getWorkouts();
+      const usedInWorkouts = workouts.filter(workout => 
+        workout.exercises.some(ex => ex.exerciseId === exercise.id)
+      );
+      
+      // Check if this exercise is used in any templates
+      const templates = await db.getTemplates();
+      const usedInTemplates = templates.filter(template =>
+        template.exercises.some(ex => ex.exerciseId === exercise.id)
+      );
+      
+      let confirmMessage = `Are you sure you want to delete "${exercise.name}"?`;
+      if (usedInWorkouts.length > 0 || usedInTemplates.length > 0) {
+        const workoutText = usedInWorkouts.length > 0 ? `${usedInWorkouts.length} workout(s)` : '';
+        const templateText = usedInTemplates.length > 0 ? `${usedInTemplates.length} template(s)` : '';
+        const usageText = [workoutText, templateText].filter(Boolean).join(' and ');
+        confirmMessage = `"${exercise.name}" is used in ${usageText}. Deleting it will not affect your existing data, but you won't be able to use this exercise again. Are you sure you want to delete it?`;
+      }
+      
+      setDeleteExerciseId(exercise.id);
+      setDeleteMessage(confirmMessage);
+      setShowDeleteConfirm(true);
+    } catch (error) {
+      console.error('Failed to check exercise usage:', error);
+    }
+  };
+
+  const confirmDeleteExercise = async () => {
+    if (!deleteExerciseId) return;
+    
+    try {
+      const db = await getDB();
+      await db.deleteExercise(deleteExerciseId);
+      loadExercises(); // Refresh the list
+    } catch (error) {
+      console.error('Failed to delete exercise:', error);
+    } finally {
+      setDeleteExerciseId(null);
+      setDeleteMessage('');
+    }
   };
 
   if (loading) {
@@ -215,14 +266,23 @@ export default function ExercisesPage() {
                         </div>
                       </div>
                       
-                      <Button
-                        variant="glass"
-                        size="sm"
-                        onClick={() => handleEditClick(exercise)}
-                        className="ml-3"
-                      >
-                        Edit
-                      </Button>
+                      <div className="flex gap-2 ml-3">
+                        <Button
+                          variant="glass"
+                          size="sm"
+                          onClick={() => handleEditClick(exercise)}
+                        >
+                          Edit
+                        </Button>
+                        <Button
+                          variant="glass"
+                          size="sm"
+                          onClick={() => handleDeleteClick(exercise)}
+                          className="text-gray-600 hover:text-red-600"
+                        >
+                          <ActionIcon name="delete" size={14} />
+                        </Button>
+                      </div>
                     </div>
                   </Card>
                 );
@@ -285,6 +345,18 @@ export default function ExercisesPage() {
           }}
         />
       </Modal>
+
+      {/* Delete Confirmation Modal */}
+      <ConfirmModal
+        isOpen={showDeleteConfirm}
+        onClose={() => setShowDeleteConfirm(false)}
+        onConfirm={confirmDeleteExercise}
+        title="Delete Exercise"
+        message={deleteMessage}
+        confirmText="Delete"
+        cancelText="Cancel"
+        variant="danger"
+      />
     </div>
   );
 }
