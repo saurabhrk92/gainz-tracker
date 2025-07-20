@@ -66,6 +66,10 @@ export interface TemplateExercise {
   notes?: string;
   lastWeights?: number[];
   lastPerformed?: Date;
+  // Superset functionality
+  supersetGroup?: string; // UUID for grouping exercises into supersets
+  supersetOrder?: number; // Order within the superset (1, 2, 3...)
+  restBetweenExercises?: number; // Short rest between superset exercises (10-30s)
 }
 
 // Workout Session Model

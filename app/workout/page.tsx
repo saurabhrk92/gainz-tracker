@@ -3,10 +3,11 @@
 import { useState, useEffect, Suspense } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { useWorkout } from '@/lib/hooks/useWorkout';
-import { Exercise, WorkoutTemplate } from '@/lib/types';
+import { Exercise, WorkoutTemplate, TemplateExercise } from '@/lib/types';
 import { getDB } from '@/lib/storage/indexedDB';
 import { formatTime } from '@/lib/utils';
 import { MUSCLE_GROUPS } from '@/lib/constants';
+import { organizeWorkoutStructure, getNextExerciseInFlow, getRestTimeForTransition, formatSupersetName } from '@/lib/supersetUtils';
 import RestTimer from '../components/workout/RestTimer';
 import WorkoutTimer from '../components/workout/WorkoutTimer';
 import PlateCalculator from '../components/workout/PlateCalculator';
@@ -25,6 +26,7 @@ function WorkoutPageContent() {
   const [template, setTemplate] = useState<WorkoutTemplate | null>(null);
   const [exercises, setExercises] = useState<Exercise[]>([]);
   const [currentExerciseIndex, setCurrentExerciseIndex] = useState(0);
+  const [workoutStructure, setWorkoutStructure] = useState<{ individualExercises: TemplateExercise[], supersets: any[] }>({ individualExercises: [], supersets: [] });
   const [sets, setSets] = useState<{ [exerciseId: string]: Array<{ reps: number; weight: number }> }>({});
   const [loading, setLoading] = useState(true);
   const [workoutStartTime, setWorkoutStartTime] = useState<Date | null>(null);
@@ -69,6 +71,10 @@ function WorkoutPageContent() {
         setWorkoutStartTime(new Date(existingWorkout.date));
         setIsWorkoutTimerActive(true);
         
+        // Organize workout structure for superset handling
+        const structure = organizeWorkoutStructure(templateData.exercises);
+        setWorkoutStructure(structure);
+        
         // Restore existing sets
         const restoredSets: { [exerciseId: string]: Array<{ reps: number; weight: number }> } = {};
         existingWorkout.exercises.forEach(sessionEx => {
@@ -102,6 +108,10 @@ function WorkoutPageContent() {
         }
 
         setTemplate(templateData);
+        
+        // Organize workout structure for superset handling
+        const structure = organizeWorkoutStructure(templateData.exercises);
+        setWorkoutStructure(structure);
         
         // Initialize sets tracking for new workout
         const initialSets: { [exerciseId: string]: Array<{ reps: number; weight: number }> } = {};
@@ -239,9 +249,10 @@ function WorkoutPageContent() {
         await handleCompleteWorkout();
       }, 1000);
     } else {
-      // Only start rest timer if we're not moving to next exercise
-      const currentExercise = exercises[currentExerciseIndex];
-      const restTimeToUse = template.exercises[currentExerciseIndex].restTime || currentExercise?.defaultRestTime || 60;
+      // Calculate appropriate rest time based on superset logic
+      const currentTemplateExercise = template.exercises[currentExerciseIndex];
+      const nextExercise = getNextExerciseInFlow(currentTemplateExercise, template.exercises);
+      const restTimeToUse = getRestTimeForTransition(currentTemplateExercise, nextExercise);
       
       // Start rest timer after UI updates
       setTimeout(() => {
@@ -375,6 +386,11 @@ function WorkoutPageContent() {
   const isLastExercise = currentExerciseIndex >= exercises.length - 1;
   const completedExercises = template.exercises.filter(ex => (sets[ex.exerciseId]?.length || 0) > 0).length;
   const progress = Math.round((completedExercises / template.exercises.length) * 100);
+  
+  // Superset information for current exercise
+  const isInSuperset = !!templateExercise.supersetGroup;
+  const supersetGroup = isInSuperset ? template.exercises.filter(ex => ex.supersetGroup === templateExercise.supersetGroup) : [];
+  const supersetName = isInSuperset ? formatSupersetName(supersetGroup, exercises) : null;
 
   return (
     <div className="flex flex-col min-h-screen bg-gray-50">
@@ -412,8 +428,27 @@ function WorkoutPageContent() {
           onPause={handleTimerPause}
         />
 
+        {/* Superset Information */}
+        {isInSuperset && (
+          <Card className="bg-gradient-to-r from-orange-50 to-orange-100 border-orange-200">
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 bg-orange-500 rounded-xl flex items-center justify-center text-white font-bold">
+                {templateExercise.supersetOrder}
+              </div>
+              <div className="flex-1">
+                <h4 className="font-bold text-orange-800">{supersetName}</h4>
+                <p className="text-sm text-orange-700">
+                  Exercise {templateExercise.supersetOrder} of {supersetGroup.length} • 
+                  {templateExercise.restBetweenExercises || 15}s between exercises, 
+                  {templateExercise.restTime || 120}s after superset
+                </p>
+              </div>
+            </div>
+          </Card>
+        )}
+
         {/* Current Exercise */}
-        <Card className="relative overflow-hidden border-l-4" style={{ borderLeftColor: muscleGroupInfo.color }}>
+        <Card className="relative overflow-hidden border-l-4" style={{ borderLeftColor: isInSuperset ? '#f97316' : muscleGroupInfo.color }}>
           <div className="space-y-4">
             <div className="flex justify-between items-start">
               <div className="flex items-center gap-3">
@@ -426,13 +461,21 @@ function WorkoutPageContent() {
                 <div>
                   <h3 className="text-xl font-bold text-gray-800 font-display">{currentExercise.name}</h3>
                   <p className="text-sm" style={{ color: muscleGroupInfo.color }}>
-                    Exercise {currentExerciseIndex + 1} of {exercises.length}
+                    {isInSuperset 
+                      ? `${supersetName} (${templateExercise.supersetOrder}/${supersetGroup.length})`
+                      : `Exercise ${currentExerciseIndex + 1} of ${exercises.length}`
+                    }
                   </p>
                 </div>
               </div>
               <div className="text-right">
                 <div className="text-xs text-gray-600">Target</div>
                 <div className="font-bold text-gray-800">{templateExercise.targetSets} sets</div>
+                {isInSuperset && (
+                  <div className="text-xs text-green-600 mt-1">
+                    Rest: {templateExercise.restBetweenExercises || 15}s → {templateExercise.restTime || 120}s
+                  </div>
+                )}
               </div>
             </div>
 
@@ -514,6 +557,8 @@ function WorkoutPageContent() {
               const exercise = exercises[index];
               const exerciseSets = sets[templateEx.exerciseId] || [];
               const muscleInfo = MUSCLE_GROUPS[exercise?.muscleGroup || 'chest'];
+              const isInSuperset = !!templateEx.supersetGroup;
+              const supersetExercises = isInSuperset ? template.exercises.filter(ex => ex.supersetGroup === templateEx.supersetGroup) : [];
               
               return (
                 <div
@@ -523,6 +568,8 @@ function WorkoutPageContent() {
                       ? 'bg-blue-50 border-2 border-blue-200'
                       : exerciseSets.length > 0
                       ? 'bg-green-50 border border-green-200'
+                      : isInSuperset
+                      ? 'bg-orange-50 border border-orange-200'
                       : 'bg-gray-50 border border-gray-200'
                   }`}
                 >
@@ -531,14 +578,21 @@ function WorkoutPageContent() {
                       ? 'bg-blue-600 text-white'
                       : exerciseSets.length > 0
                       ? 'bg-green-600 text-white'
+                      : isInSuperset
+                      ? 'bg-orange-500 text-white'
                       : 'bg-gray-400 text-white'
                   }`}>
-                    {exerciseSets.length > 0 ? '✓' : index + 1}
+                    {exerciseSets.length > 0 ? '✓' : isInSuperset ? `${templateEx.supersetOrder}` : index + 1}
                   </div>
                   <div className="flex-1">
                     <p className="font-medium text-gray-800">{exercise?.name || 'Unknown Exercise'}</p>
                     <p className="text-sm text-gray-600">
                       {exerciseSets.length}/{templateEx.targetSets} sets
+                      {isInSuperset && (
+                        <span className="ml-2 text-orange-600 font-medium">
+                          • {formatSupersetName(supersetExercises, exercises)}
+                        </span>
+                      )}
                     </p>
                   </div>
                   <div className="text-lg">
