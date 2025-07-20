@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { WorkoutTemplate, Exercise, MuscleGroup, WeekDay } from '@/lib/types';
+import { WorkoutTemplate, Exercise, MuscleGroup, WeekDay, TemplateExercise } from '@/lib/types';
 import { getDB } from '@/lib/storage/indexedDB';
 import { MUSCLE_GROUPS, WEEK_DAYS } from '@/lib/constants';
 import Button from '../ui/Button';
@@ -15,12 +15,6 @@ interface TemplateFormProps {
   template?: WorkoutTemplate;
   onSuccess: (template: WorkoutTemplate) => void;
   onCancel: () => void;
-}
-
-interface TemplateExercise {
-  exerciseId: string;
-  targetSets: number;
-  restTime?: number;
 }
 
 export default function TemplateForm({ template, onSuccess, onCancel }: TemplateFormProps) {
@@ -311,25 +305,25 @@ export default function TemplateForm({ template, onSuccess, onCancel }: Template
         <div className="space-y-4">
           {(() => {
             // Group exercises by superset
-            const groupedExercises = new Map();
-            const individualExercises = [];
+            const groupedExercises = new Map<string, Array<{ templateExercise: TemplateExercise, index: number }>>();
+            const individualExercises: Array<{ templateExercise: TemplateExercise, index: number }> = [];
             
             templateExercises.forEach((templateExercise, index) => {
               if (templateExercise.supersetGroup) {
                 if (!groupedExercises.has(templateExercise.supersetGroup)) {
                   groupedExercises.set(templateExercise.supersetGroup, []);
                 }
-                groupedExercises.get(templateExercise.supersetGroup).push({ templateExercise, index });
+                groupedExercises.get(templateExercise.supersetGroup)!.push({ templateExercise, index });
               } else {
                 individualExercises.push({ templateExercise, index });
               }
             });
             
-            const allGroups = [];
+            const allGroups: Array<{ type: 'individual' | 'superset', exercises: Array<{ templateExercise: TemplateExercise, index: number }>, supersetId?: string }> = [];
             
             // Add individual exercises
             individualExercises.forEach(({ templateExercise, index }) => {
-              allGroups.push({ type: 'individual', exercises: [{ templateExercise, index }] });
+              allGroups.push({ type: 'individual' as const, exercises: [{ templateExercise, index }] });
             });
             
             // Add superset groups
@@ -337,7 +331,7 @@ export default function TemplateForm({ template, onSuccess, onCancel }: Template
               const sortedExercises = exercises.sort((a, b) => 
                 (a.templateExercise.supersetOrder || 0) - (b.templateExercise.supersetOrder || 0)
               );
-              allGroups.push({ type: 'superset', exercises: sortedExercises, supersetId });
+              allGroups.push({ type: 'superset' as const, exercises: sortedExercises, supersetId });
             });
             
             // Sort all groups by the order of their first exercise
@@ -348,7 +342,7 @@ export default function TemplateForm({ template, onSuccess, onCancel }: Template
             });
             
             return allGroups.map((group, groupIndex) => {
-              if (group.type === 'superset') {
+              if (group.type === 'superset' && group.supersetId) {
                 const firstExercise = group.exercises[0].templateExercise;
                 const supersetGroup = templateExercises.filter(ex => ex.supersetGroup === group.supersetId);
                 
@@ -371,7 +365,7 @@ export default function TemplateForm({ template, onSuccess, onCancel }: Template
                       {/* Delete entire superset button */}
                       <Button
                         type="button"
-                        onClick={() => deleteEntireSuperset(group.supersetId)}
+                        onClick={() => deleteEntireSuperset(group.supersetId!)}
                         size="sm"
                         variant="danger"
                         title="Delete entire superset"
