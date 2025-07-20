@@ -348,11 +348,11 @@ export default function SetInputForm({ onSubmit, previousSets, barWeight = 45, e
               <EquipmentIcon name="machine" size={16} />
               Machine Weight (lbs)
             </label>
-            <div className="flex items-center gap-2">
+            <div className="flex items-center gap-1 sm:gap-2">
               <button
                 type="button"
                 onClick={() => adjustWeight(-5)}
-                className="w-10 h-10 bg-gray-200 hover:bg-gray-300 rounded-lg flex items-center justify-center text-lg font-bold text-gray-700 transition-all duration-200"
+                className="w-8 h-10 sm:w-10 sm:h-10 bg-gray-200 hover:bg-gray-300 rounded-lg flex items-center justify-center text-lg font-bold text-gray-700 transition-all duration-200 flex-shrink-0"
               >
                 −
               </button>
@@ -361,7 +361,7 @@ export default function SetInputForm({ onSubmit, previousSets, barWeight = 45, e
                 value={weight}
                 onChange={(e) => setWeight(e.target.value)}
                 placeholder="Enter weight"
-                className="flex-1 px-3 py-3 rounded-lg border border-gray-200 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-purple-500 transition-all duration-200 min-h-[44px] text-sm text-center font-bold"
+                className="flex-1 min-w-0 px-2 py-3 sm:px-3 rounded-lg border border-gray-200 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-purple-500 transition-all duration-200 min-h-[44px] text-sm text-center font-bold"
                 min="0"
                 step="2.5"
                 required
@@ -369,7 +369,7 @@ export default function SetInputForm({ onSubmit, previousSets, barWeight = 45, e
               <button
                 type="button"
                 onClick={() => adjustWeight(5)}
-                className="w-10 h-10 bg-gray-200 hover:bg-gray-300 rounded-lg flex items-center justify-center text-lg font-bold text-gray-700 transition-all duration-200"
+                className="w-8 h-10 sm:w-10 sm:h-10 bg-gray-200 hover:bg-gray-300 rounded-lg flex items-center justify-center text-lg font-bold text-gray-700 transition-all duration-200 flex-shrink-0"
               >
                 +
               </button>
