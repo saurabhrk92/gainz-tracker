@@ -27,7 +27,8 @@ export const EQUIPMENT_TYPES = [
   { value: 'dumbbell', label: 'Dumbbell', icon: 'dumbbell' },
   { value: 'fixed_bar', label: 'Fixed Weight Bar', icon: 'fixed-bar' },
   { value: 'machine', label: 'Machine', icon: 'machine' },
-  { value: 'bodyweight', label: 'Bodyweight', icon: 'dumbbell' },
+  { value: 'bodyweight', label: 'Bodyweight', icon: 'bodyweight' },
+  { value: 'cable', label: 'Cable', icon: 'cable' },
 ] as const;
 
 export const BAR_WEIGHTS = [

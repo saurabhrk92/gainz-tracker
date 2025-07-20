@@ -216,13 +216,7 @@ export default function TemplatesPage() {
               <Card className="text-center py-8">
                 <UIIcon name="templates" size={48} color="#9CA3AF" className="mb-4" />
                 <h3 className="text-lg font-bold text-black mb-2">No Templates Yet</h3>
-                <p className="text-gray-600 text-sm mb-4">Create your first workout template to get started!</p>
-                <Button 
-                  onClick={() => setShowCreateModal(true)}
-                  size="md"
-                >
-                  Get Started
-                </Button>
+                <p className="text-gray-600 text-sm">Create your first workout template to get started!</p>
               </Card>
             )}
           </div>

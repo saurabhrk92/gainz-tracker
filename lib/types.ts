@@ -9,7 +9,7 @@ export type MuscleGroup =
   | 'core' 
   | 'calves';
 
-export type EquipmentType = 'barbell' | 'dumbbell' | 'fixed_bar' | 'machine' | 'bodyweight';
+export type EquipmentType = 'barbell' | 'dumbbell' | 'fixed_bar' | 'machine' | 'bodyweight' | 'cable';
 
 export type WeekDay = 
   | 'monday' 

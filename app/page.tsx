@@ -9,7 +9,7 @@ import WorkoutDetailsModal from './components/workout/WorkoutDetailsModal';
 import { formatDate } from '@/lib/utils';
 import { WorkoutTemplate, WorkoutSession } from '@/lib/types';
 import { getDB } from '@/lib/storage/indexedDB';
-import { seedSampleData } from '@/lib/seed-data';
+import { seedPopularExercises } from '@/lib/popular-exercises';
 import { useSync } from '@/lib/hooks/useSync';
 import { useAuth } from '@/lib/auth/useAuth';
 import { MUSCLE_GROUPS } from '@/lib/constants';
@@ -35,8 +35,8 @@ export default function HomePage() {
   const [selectedWorkoutId, setSelectedWorkoutId] = useState<string | null>(null);
 
   useEffect(() => {
-    // Seed sample data on first load
-    seedSampleData().then(() => {
+    // Seed popular exercises on first load
+    seedPopularExercises().then(() => {
       loadHomeData();
     });
   }, []);

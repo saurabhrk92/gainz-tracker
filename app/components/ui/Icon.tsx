@@ -6,7 +6,7 @@ import React from 'react';
 export type IconCategory = 'muscle-groups' | 'equipment' | 'actions' | 'ui';
 
 export type MuscleGroupIcon = 'chest' | 'back' | 'shoulders' | 'arms' | 'legs' | 'glutes' | 'core' | 'calves';
-export type EquipmentIcon = 'barbell' | 'dumbbell' | 'machine' | 'fixed-bar';
+export type EquipmentIcon = 'barbell' | 'dumbbell' | 'machine' | 'fixed-bar' | 'cable' | 'bodyweight';
 export type ActionIcon = 'play' | 'pause' | 'stop' | 'timer' | 'calculator' | 'next' | 'previous' | 'finish' | 'delete';
 export type UIIcon = 'calendar' | 'checkmark' | 'settings' | 'workout' | 'templates' | 'history' | 'progress' | 'exercises' | 'close' | 'home';
 
@@ -403,6 +403,39 @@ const IconSVGs = {
         <path d="M10 12H14" stroke="white" strokeWidth="1"/>
       </svg>
     ),
+    cable: (color: string, size: number | string) => (
+      <svg width={size} height={size} viewBox="0 0 24 24" fill="none">
+        {/* Cable machine pulley */}
+        <circle cx="12" cy="6" r="2" fill={color}/>
+        <circle cx="12" cy="6" r="1" fill="white"/>
+        {/* Cable */}
+        <path d="M12 8C12 8 8 10 8 14C8 18 10 20 12 20C14 20 16 18 16 14C16 10 12 8 12 8Z" stroke={color} strokeWidth="2" fill="none"/>
+        {/* Handle */}
+        <rect x="10" y="18" width="4" height="3" rx="1" fill={color}/>
+        {/* Weight stack */}
+        <rect x="4" y="14" width="3" height="6" rx="1" fill={color}/>
+        <rect x="17" y="14" width="3" height="6" rx="1" fill={color}/>
+      </svg>
+    ),
+    bodyweight: (color: string, size: number | string) => (
+      <svg width={size} height={size} viewBox="0 0 24 24" fill="none">
+        {/* Head */}
+        <circle cx="12" cy="5" r="2.5" fill={color}/>
+        {/* Body */}
+        <rect x="10.5" y="7" width="3" height="8" rx="1.5" fill={color}/>
+        {/* Arms in exercise position */}
+        <ellipse cx="8" cy="10" rx="1.5" ry="3" transform="rotate(-20 8 10)" fill={color}/>
+        <ellipse cx="16" cy="10" rx="1.5" ry="3" transform="rotate(20 16 10)" fill={color}/>
+        {/* Legs */}
+        <ellipse cx="10.5" cy="18" rx="1" ry="3" fill={color}/>
+        <ellipse cx="13.5" cy="18" rx="1" ry="3" fill={color}/>
+        {/* Dynamic movement lines */}
+        <path d="M6 8C7 8 8 9 8 10" stroke={color} strokeWidth="1" fill="none" opacity="0.6"/>
+        <path d="M18 8C17 8 16 9 16 10" stroke={color} strokeWidth="1" fill="none" opacity="0.6"/>
+        {/* Muscle definition */}
+        <circle cx="12" cy="11" r="0.5" fill="white" opacity="0.7"/>
+      </svg>
+    ),
   },
   'actions': {
     play: (color: string, size: number | string) => (
@@ -484,7 +517,7 @@ const Icon: React.FC<IconProps> = ({
     return null;
   }
 
-  const iconRenderer = iconCategory[name as keyof typeof iconCategory];
+  const iconRenderer = iconCategory[name as keyof typeof iconCategory] as ((color: string, size: number | string) => React.JSX.Element) | undefined;
   if (!iconRenderer) {
     console.warn(`Icon "${name}" not found in category "${category}"`);
     return null;

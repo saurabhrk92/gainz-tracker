@@ -13,16 +13,9 @@ export default function WorkoutPersistenceProvider({ children }: { children: Rea
   const router = useRouter();
 
   useEffect(() => {
-    if (!loading && activeWorkout) {
-      const isOnWorkoutPage = window.location.pathname.includes('/workout');
-      const hasWorkoutId = window.location.search.includes(`id=${activeWorkout.id}`) || 
-                          window.location.search.includes(`workoutId=${activeWorkout.id}`);
-      
-      // Only show prompt if we're not already viewing this specific workout
-      if (!isOnWorkoutPage || !hasWorkoutId) {
-        setShowPrompt(true);
-      }
-    }
+    // Disabled: User requested removal of problematic active workout notification
+    // The notification had issues with inactive timer, no close button, and direct links
+    // Users can access active workouts through the home page instead
   }, [loading, activeWorkout]);
 
   const handleContinueWorkout = () => {

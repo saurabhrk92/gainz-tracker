@@ -241,20 +241,12 @@ export default function ExercisesPage() {
                     : 'No exercises yet'
                   }
                 </h3>
-                <p className="text-gray-600 text-sm mb-4">
+                <p className="text-gray-600 text-sm">
                   {searchTerm || selectedMuscleGroup !== 'all'
                     ? 'Try adjusting your filters'
-                    : 'Add your first exercise to get started!'
+                    : 'Popular exercises will be added automatically!'
                   }
                 </p>
-                {!(searchTerm || selectedMuscleGroup !== 'all') && (
-                  <Button 
-                    onClick={() => setShowCreateModal(true)}
-                    size="md"
-                  >
-                    Add Your First Exercise
-                  </Button>
-                )}
               </Card>
             )}
           </div>

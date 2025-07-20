@@ -66,12 +66,6 @@ export default function Navigation() {
               <h2 className="text-xl font-bold text-black">Gainz Tracker</h2>
               <p className="text-sm text-gray-500">Navigation</p>
             </div>
-            <button
-              onClick={() => setIsOpen(false)}
-              className="w-8 h-8 bg-gray-100 rounded-lg flex items-center justify-center"
-            >
-              <UIIcon name="close" size={16} />
-            </button>
           </div>
 
           {/* Navigation Items */}
