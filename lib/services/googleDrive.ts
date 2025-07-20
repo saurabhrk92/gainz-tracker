@@ -14,14 +14,22 @@ export class GoogleDriveService {
         body: JSON.stringify({ data }),
       });
 
+      if (response.status === 401) {
+        throw new Error('Authentication expired. Please sign in again.');
+      }
+
       if (!response.ok) {
-        throw new Error('Failed to upload backup');
+        const errorData = await response.json().catch(() => ({}));
+        throw new Error(errorData.error || 'Failed to upload backup');
       }
 
       const result = await response.json();
       return result.fileId;
     } catch (error) {
       console.error('Failed to upload backup:', error);
+      if (error instanceof Error && error.message.includes('Authentication expired')) {
+        throw error; // Pass through auth errors
+      }
       throw new Error('Failed to upload backup to Google Drive');
     }
   }
@@ -30,17 +38,25 @@ export class GoogleDriveService {
     try {
       const response = await fetch('/api/sync/restore');
 
+      if (response.status === 401) {
+        throw new Error('Authentication expired. Please sign in again.');
+      }
+
       if (!response.ok) {
         if (response.status === 404) {
           return null;
         }
-        throw new Error('Failed to download backup');
+        const errorData = await response.json().catch(() => ({}));
+        throw new Error(errorData.error || 'Failed to download backup');
       }
 
       const result = await response.json();
       return result.data;
     } catch (error) {
       console.error('Failed to download backup:', error);
+      if (error instanceof Error && error.message.includes('Authentication expired')) {
+        throw error; // Pass through auth errors
+      }
       throw new Error('Failed to download backup from Google Drive');
     }
   }
