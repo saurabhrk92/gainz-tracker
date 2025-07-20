@@ -88,6 +88,7 @@
 - **Conflict Resolution**: Handles sync conflicts gracefully
 - **Auto-Sync**: Every 30 minutes + workout events
 - **Throttling**: Intelligent sync frequency to avoid API limits
+- **Auto-Restore**: Detects fresh login and automatically restores latest backup from Google Drive
 
 ## Database Schema (IndexedDB)
 
@@ -196,6 +197,7 @@ SessionExercise {
 - **Seed Data**: Removed all example data, added 40 popular exercises
 - **Auto-Population**: Exercises auto-populate on first load
 - **Delete Protection**: Warns about usage before deletion
+- **Auto-Restore on Login**: Automatically restores latest backup when user logs into Google Drive for the first time
 
 ## Performance Optimizations
 
@@ -287,6 +289,21 @@ setTimeout(async () => {
     setTimeout(() => setSyncStatus(''), 5000);
   }
 }, 100);
+```
+
+### Auto-Restore on Fresh Login
+```typescript
+// Detect transition from unauthenticated to authenticated
+const wasAuthenticated = prevAuthenticatedRef.current;
+const isNowAuthenticated = isAuthenticated;
+
+if (wasAuthenticated === false && isNowAuthenticated === true) {
+  handleFreshLogin(); // Only restore on actual login, not auth state checks
+}
+
+// Session-based deduplication prevents multiple restoration attempts
+const sessionKey = 'gainz_restore_attempted';
+const hasAttemptedRestore = sessionStorage.getItem(sessionKey);
 ```
 
 ### Chart Implementation
