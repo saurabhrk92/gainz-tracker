@@ -7,9 +7,12 @@ import { tokenStore } from './tokenStore';
 export function useAuth() {
   const { data: session, status } = useSession();
   const [hasStoredTokens, setHasStoredTokens] = useState<boolean | null>(null);
+  const [syncInProgress, setSyncInProgress] = useState(false);
 
   // Check token status when session changes
   useEffect(() => {
+    // Prevent sync loops
+    if (syncInProgress) return;
     const checkTokenStatus = async () => {
       console.log('useAuth session check:', {
         hasSession: !!session,
@@ -21,6 +24,8 @@ export function useAuth() {
 
       if (session?.user?.email) {
         try {
+          setSyncInProgress(true);
+          
           // Handle fresh sign-in with new tokens
           if (session.storeInIndexedDB) {
             console.log('Storing fresh tokens in IndexedDB');
@@ -34,6 +39,7 @@ export function useAuth() {
             if (typeof window !== 'undefined') {
               sessionStorage.removeItem('needs_token_refresh');
             }
+            setSyncInProgress(false);
             return;
           }
 
@@ -46,6 +52,7 @@ export function useAuth() {
             if (typeof window !== 'undefined') {
               sessionStorage.removeItem('needs_token_refresh');
             }
+            setSyncInProgress(false);
             return;
           }
 
@@ -77,12 +84,14 @@ export function useAuth() {
             if (typeof window !== 'undefined') {
               sessionStorage.removeItem('needs_token_refresh');
             }
+            setSyncInProgress(false);
           } else if (session.needsReconnect) {
             console.log('Session indicates user needs to reconnect for refresh token');
             setHasStoredTokens(false);
             if (typeof window !== 'undefined') {
               sessionStorage.setItem('needs_token_refresh', 'true');
             }
+            setSyncInProgress(false);
           } else {
             // Last resort: check KV directly
             try {
@@ -112,10 +121,12 @@ export function useAuth() {
               console.error('Failed to check token status:', error);
               setHasStoredTokens(false);
             }
+            setSyncInProgress(false);
           }
         } catch (error) {
           console.error('Error checking token status:', error);
           setHasStoredTokens(false);
+          setSyncInProgress(false);
         }
       }
     };
