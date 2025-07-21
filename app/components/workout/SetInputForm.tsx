@@ -241,146 +241,34 @@ export default function SetInputForm({ onSubmit, previousSets, barWeight = 45, e
     switch (exerciseType) {
       case 'barbell':
         return (
-          <div>
-            <label className="block text-sm font-semibold text-gray-700 mb-2 min-h-[40px] flex items-end gap-2">
-              <EquipmentIcon name="barbell" size={16} />
-              Total Weight (lbs)
-            </label>
-            <div className="flex items-center gap-2">
-              <button
-                type="button"
-                onClick={() => adjustWeight(-5)}
-                className="w-10 h-10 bg-gray-200 hover:bg-gray-300 rounded-lg flex items-center justify-center text-lg font-bold text-gray-700 transition-all duration-200"
-              >
-                −
-              </button>
-              <input
-                type="number"
-                value={weight}
-                onChange={(e) => setWeight(e.target.value)}
-                placeholder={lastWorkoutData ? lastWorkoutData.weight.toString() : (suggestedWeight > 0 ? suggestedWeight.toString() : "135")}
-                className="flex-1 px-3 py-3 rounded-lg border border-gray-200 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-purple-500 transition-all duration-200 min-h-[44px] text-sm text-center font-bold"
-                min="0"
-                step="2.5"
-                required
-              />
-              <button
-                type="button"
-                onClick={() => adjustWeight(5)}
-                className="w-10 h-10 bg-gray-200 hover:bg-gray-300 rounded-lg flex items-center justify-center text-lg font-bold text-gray-700 transition-all duration-200"
-              >
-                +
-              </button>
-            </div>
-          </div>
+          <label className="block text-sm font-semibold text-gray-700 mb-2 min-h-[40px] flex items-end gap-2">
+            <EquipmentIcon name="barbell" size={16} />
+            Total Weight (lbs)
+          </label>
         );
 
       case 'dumbbell':
         return (
-          <div>
-            <label className="block text-sm font-semibold text-gray-700 mb-2 min-h-[40px] flex items-end gap-2">
-              <EquipmentIcon name="dumbbell" size={16} />
-              Dumbbell Weight
-            </label>
-            <div className="flex items-center gap-2">
-              <button
-                type="button"
-                onClick={() => adjustWeight(-5)}
-                className="w-10 h-10 bg-gray-200 hover:bg-gray-300 rounded-lg flex items-center justify-center text-lg font-bold text-gray-700 transition-all duration-200"
-              >
-                −
-              </button>
-              <input
-                type="number"
-                value={weight}
-                onChange={(e) => setWeight(e.target.value)}
-                placeholder="Enter weight"
-                className="flex-1 px-3 py-3 rounded-lg border border-gray-200 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-purple-500 transition-all duration-200 min-h-[44px] text-sm text-center font-bold"
-                min="0"
-                step="2.5"
-                required
-              />
-              <button
-                type="button"
-                onClick={() => adjustWeight(5)}
-                className="w-10 h-10 bg-gray-200 hover:bg-gray-300 rounded-lg flex items-center justify-center text-lg font-bold text-gray-700 transition-all duration-200"
-              >
-                +
-              </button>
-            </div>
-          </div>
+          <label className="block text-sm font-semibold text-gray-700 mb-2 min-h-[40px] flex items-end gap-2">
+            <EquipmentIcon name="dumbbell" size={16} />
+            Dumbbell Weight
+          </label>
         );
 
       case 'fixed_bar':
         return (
-          <div>
-            <label className="block text-sm font-semibold text-gray-700 mb-2 min-h-[40px] flex items-end gap-2">
-              <EquipmentIcon name="fixed-bar" size={16} />
-              Fixed Bar Weight (lbs)
-            </label>
-            <div className="flex items-center gap-2">
-              <button
-                type="button"
-                onClick={() => adjustWeight(-5)}
-                className="w-10 h-10 bg-gray-200 hover:bg-gray-300 rounded-lg flex items-center justify-center text-lg font-bold text-gray-700 transition-all duration-200"
-              >
-                −
-              </button>
-              <input
-                type="number"
-                value={weight}
-                onChange={(e) => setWeight(e.target.value)}
-                placeholder="Enter weight"
-                className="flex-1 px-3 py-3 rounded-lg border border-gray-200 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-purple-500 transition-all duration-200 min-h-[44px] text-sm text-center font-bold"
-                min="0"
-                step="5"
-                required
-              />
-              <button
-                type="button"
-                onClick={() => adjustWeight(5)}
-                className="w-10 h-10 bg-gray-200 hover:bg-gray-300 rounded-lg flex items-center justify-center text-lg font-bold text-gray-700 transition-all duration-200"
-              >
-                +
-              </button>
-            </div>
-          </div>
+          <label className="block text-sm font-semibold text-gray-700 mb-2 min-h-[40px] flex items-end gap-2">
+            <EquipmentIcon name="fixed-bar" size={16} />
+            Fixed Bar Weight (lbs)
+          </label>
         );
 
       case 'machine':
         return (
-          <div>
-            <label className="block text-sm font-semibold text-gray-700 mb-2 min-h-[40px] flex items-end gap-2">
-              <EquipmentIcon name="machine" size={16} />
-              Machine Weight (lbs)
-            </label>
-            <div className="flex items-center gap-2">
-              <button
-                type="button"
-                onClick={() => adjustWeight(-5)}
-                className="w-10 h-10 bg-gray-200 hover:bg-gray-300 rounded-lg flex items-center justify-center text-lg font-bold text-gray-700 transition-all duration-200"
-              >
-                −
-              </button>
-              <input
-                type="number"
-                value={weight}
-                onChange={(e) => setWeight(e.target.value)}
-                placeholder="Enter weight"
-                className="flex-1 px-3 py-3 rounded-lg border border-gray-200 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-purple-500 transition-all duration-200 min-h-[44px] text-sm text-center font-bold"
-                min="0"
-                step="2.5"
-                required
-              />
-              <button
-                type="button"
-                onClick={() => adjustWeight(5)}
-                className="w-10 h-10 bg-gray-200 hover:bg-gray-300 rounded-lg flex items-center justify-center text-lg font-bold text-gray-700 transition-all duration-200"
-              >
-                +
-              </button>
-            </div>
-          </div>
+          <label className="block text-sm font-semibold text-gray-700 mb-2 min-h-[40px] flex items-end gap-2">
+            <EquipmentIcon name="machine" size={16} />
+            Machine Weight (lbs)
+          </label>
         );
 
       case 'bodyweight':
@@ -390,35 +278,6 @@ export default function SetInputForm({ onSubmit, previousSets, barWeight = 45, e
               <EquipmentIcon name="dumbbell" size={16} />
               Additional Weight (lbs)
             </label>
-            <div className="flex items-center gap-2">
-              <button
-                type="button"
-                onClick={() => adjustWeight(-5)}
-                className="w-10 h-10 bg-gray-200 hover:bg-gray-300 rounded-lg flex items-center justify-center text-lg font-bold text-gray-700 transition-all duration-200"
-              >
-                −
-              </button>
-              <input
-                type="number"
-                value={weight}
-                onChange={(e) => setWeight(e.target.value)}
-                placeholder="0"
-                className="flex-1 px-3 py-3 rounded-lg border border-gray-200 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-purple-500 transition-all duration-200 min-h-[44px] text-sm text-center font-bold"
-                min="0"
-                step="5"
-                required
-              />
-              <button
-                type="button"
-                onClick={() => adjustWeight(5)}
-                className="w-10 h-10 bg-gray-200 hover:bg-gray-300 rounded-lg flex items-center justify-center text-lg font-bold text-gray-700 transition-all duration-200"
-              >
-                +
-              </button>
-            </div>
-            <p className="text-xs text-gray-500 mt-1">
-              Enter additional weight beyond bodyweight (0 for bodyweight only)
-            </p>
           </div>
         );
 
@@ -429,7 +288,7 @@ export default function SetInputForm({ onSubmit, previousSets, barWeight = 45, e
 
   return (
     <Card>
-      <form onSubmit={handleSubmit} className="space-y-4">
+      <form onSubmit={handleSubmit} className="space-y-4 overflow-hidden">
         <h3 className="text-lg font-bold text-black">Log Your Set</h3>
         
         {/* Quick Fill from Previous Sets */}
@@ -456,16 +315,17 @@ export default function SetInputForm({ onSubmit, previousSets, barWeight = 45, e
         )}
 
         {/* Input Fields */}
-        <div className="grid grid-cols-2 gap-4">
-          <div>
+        <div className="grid grid-cols-2 gap-2 sm:gap-4 w-full min-w-0">
+          {/* Reps Column */}
+          <div className="min-w-0">
             <label className="block text-sm font-semibold text-gray-700 mb-2 min-h-[40px] flex items-end">
               Reps
             </label>
-            <div className="flex items-center gap-2">
+            <div className="flex items-center gap-1 sm:gap-2">
               <button
                 type="button"
                 onClick={() => adjustReps(-1)}
-                className="w-10 h-10 bg-gray-200 hover:bg-gray-300 rounded-lg flex items-center justify-center text-lg font-bold text-gray-700 transition-all duration-200"
+                className="w-8 h-8 sm:w-10 sm:h-10 bg-gray-200 hover:bg-gray-300 rounded-lg flex items-center justify-center text-lg font-bold text-gray-700 transition-all duration-200 flex-shrink-0"
               >
                 −
               </button>
@@ -474,7 +334,7 @@ export default function SetInputForm({ onSubmit, previousSets, barWeight = 45, e
                 value={reps}
                 onChange={(e) => setReps(e.target.value)}
                 placeholder={lastWorkoutData ? lastWorkoutData.reps.toString() : "8"}
-                className="flex-1 px-3 py-3 rounded-lg border border-gray-200 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-purple-500 transition-all duration-200 min-h-[44px] text-sm text-center font-bold"
+                className="flex-1 min-w-0 px-2 py-3 sm:px-3 rounded-lg border border-gray-200 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-purple-500 transition-all duration-200 min-h-[44px] text-sm text-center font-bold"
                 min="1"
                 max="100"
                 required
@@ -482,14 +342,54 @@ export default function SetInputForm({ onSubmit, previousSets, barWeight = 45, e
               <button
                 type="button"
                 onClick={() => adjustReps(1)}
-                className="w-10 h-10 bg-gray-200 hover:bg-gray-300 rounded-lg flex items-center justify-center text-lg font-bold text-gray-700 transition-all duration-200"
+                className="w-8 h-8 sm:w-10 sm:h-10 bg-gray-200 hover:bg-gray-300 rounded-lg flex items-center justify-center text-lg font-bold text-gray-700 transition-all duration-200 flex-shrink-0"
               >
                 +
               </button>
             </div>
           </div>
 
-          {renderWeightInput()}
+          {/* Weight Column */}
+          <div className="min-w-0">
+            {renderWeightInput()}
+            <div className="flex items-center gap-1 sm:gap-2">
+              <button
+                type="button"
+                onClick={() => adjustWeight(-5)}
+                className="w-8 h-8 sm:w-10 sm:h-10 bg-gray-200 hover:bg-gray-300 rounded-lg flex items-center justify-center text-lg font-bold text-gray-700 transition-all duration-200 flex-shrink-0"
+              >
+                −
+              </button>
+              <input
+                type="number"
+                value={weight}
+                onChange={(e) => setWeight(e.target.value)}
+                placeholder={
+                  exerciseType === 'bodyweight' 
+                    ? "0" 
+                    : lastWorkoutData 
+                      ? lastWorkoutData.weight.toString() 
+                      : (suggestedWeight > 0 ? suggestedWeight.toString() : "135")
+                }
+                className="flex-1 min-w-0 px-2 py-3 sm:px-3 rounded-lg border border-gray-200 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-purple-500 transition-all duration-200 min-h-[44px] text-sm text-center font-bold"
+                min="0"
+                step={exerciseType === 'fixed_bar' ? "5" : "2.5"}
+                required
+              />
+              <button
+                type="button"
+                onClick={() => adjustWeight(5)}
+                className="w-8 h-8 sm:w-10 sm:h-10 bg-gray-200 hover:bg-gray-300 rounded-lg flex items-center justify-center text-lg font-bold text-gray-700 transition-all duration-200 flex-shrink-0"
+              >
+                +
+              </button>
+            </div>
+            {exerciseType === 'bodyweight' && (
+              <p className="text-xs text-gray-500 mt-1">
+                Enter additional weight beyond bodyweight (0 for bodyweight only)
+              </p>
+            )}
+          </div>
         </div>
 
         {/* Barbell Plate Builder */}
