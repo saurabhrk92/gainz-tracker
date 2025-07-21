@@ -1,8 +1,6 @@
 import { showToast } from '@/lib/utils/toast';
-import { tokenStore } from '@/lib/auth/tokenStore';
-import { useSession } from 'next-auth/react';
 
-// Client-side service that manages tokens and calls API endpoints
+// Client-side service that manages tokens via KV store and calls API endpoints
 export class GoogleDriveService {
   private async getValidAccessToken(): Promise<string | null> {
     try {
@@ -12,10 +10,15 @@ export class GoogleDriveService {
         return null;
       }
 
-      const tokens = await tokenStore.getTokens(session.user.email);
-      if (!tokens) {
+      // Get tokens from KV store via API
+      const tokenResponse = await fetch('/api/auth/tokens/store');
+      const tokenData = await tokenResponse.json();
+      
+      if (!tokenData.tokens) {
         throw new Error('No tokens found for user');
       }
+
+      const tokens = tokenData.tokens;
 
       // Check if token is expired or about to expire (5 min buffer)
       const now = Date.now();
@@ -26,44 +29,34 @@ export class GoogleDriveService {
         return tokens.accessToken;
       }
 
-      // Token expired or about to expire
-      if (!tokens.refreshToken) {
-        throw new Error('No refresh token available');
-      }
-
-      // Refresh the token
-      console.log('Access token expired, refreshing...');
-      return await this.refreshAccessToken(session.user.email, tokens.refreshToken);
+      // Token expired or about to expire, try to refresh
+      console.log('Access token expired, attempting refresh...');
+      return await this.refreshAccessToken();
     } catch (error) {
       console.error('Failed to get valid access token:', error);
       return null;
     }
   }
 
-  private async refreshAccessToken(email: string, refreshToken: string): Promise<string> {
+  private async refreshAccessToken(): Promise<string> {
     try {
-      const response = await fetch('/api/auth/refresh', {
+      const response = await fetch('/api/auth/tokens/refresh', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({ refreshToken }),
       });
 
       if (!response.ok) {
+        const errorData = await response.json();
+        if (errorData.needsReconnect) {
+          throw new Error('User needs to reconnect to Google Drive');
+        }
         throw new Error('Failed to refresh token');
       }
 
       const data = await response.json();
-      
-      // Update stored tokens
-      await tokenStore.updateAccessToken(
-        email,
-        data.access_token,
-        data.expires_in || 3600
-      );
-
-      return data.access_token;
+      return data.accessToken;
     } catch (error) {
       console.error('Error refreshing access token:', error);
       throw new Error('Failed to refresh access token');

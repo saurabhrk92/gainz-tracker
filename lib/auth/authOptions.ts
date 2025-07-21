@@ -8,8 +8,9 @@ export const authOptions = {
       authorization: {
         params: {
           scope: 'openid email profile https://www.googleapis.com/auth/drive.file',
-          access_type: 'offline', // Important: get refresh token
-          prompt: 'consent', // Force consent to get refresh token
+          access_type: 'offline',
+          // Only prompt for consent if we don't have stored tokens
+          prompt: 'select_account',
         }
       }
     }),
@@ -29,7 +30,43 @@ export const authOptions = {
 
       // Initial sign in
       if (account && user) {
-        console.log('New sign-in detected, creating JWT with tokens');
+        console.log('New sign-in detected, checking tokens in KV');
+        
+        let hasValidTokens = false;
+        
+        // Only store tokens if we have a refresh token, or if no tokens exist yet
+        if (account.access_token && user.email) {
+          try {
+            const { kvTokenStore } = await import('./kvTokenStore');
+            
+            // Check if we already have tokens
+            const existingTokens = await kvTokenStore.getTokens(user.email);
+            
+            if (account.refresh_token) {
+              // We have a refresh token - store it
+              await kvTokenStore.saveTokens(
+                user.email,
+                account.access_token,
+                account.refresh_token,
+                account.expires_in || 3600
+              );
+              console.log('Tokens with refresh token stored in Vercel KV successfully');
+              hasValidTokens = true;
+            } else if (existingTokens?.refreshToken) {
+              // No refresh token from Google, but we have existing ones - keep them
+              console.log('No refresh token from Google, but existing tokens found in KV - keeping existing');
+              hasValidTokens = true;
+            } else {
+              // No refresh token and no existing tokens
+              console.log('No refresh token available and no existing tokens');
+              hasValidTokens = false;
+            }
+          } catch (error) {
+            console.error('Failed to handle tokens in KV:', error);
+            hasValidTokens = false;
+          }
+        }
+
         const newToken = {
           user: {
             id: user.id,
@@ -37,10 +74,7 @@ export const authOptions = {
             name: user.name,
             image: user.image,
           },
-          // Include tokens for initial setup
-          accessToken: account.access_token,
-          refreshToken: account.refresh_token,
-          expiresAt: Date.now() + ((account.expires_in || 3600) * 1000),
+          hasStoredTokens: hasValidTokens,
           isNewSignIn: true,
         };
         console.log('Created new JWT token:', newToken);
@@ -58,25 +92,18 @@ export const authOptions = {
     async session({ session, token }: any) {
       console.log('authOptions session callback:', {
         tokenIsNewSignIn: token.isNewSignIn,
-        hasAccessToken: !!token.accessToken,
-        hasRefreshToken: !!token.refreshToken,
+        hasStoredTokens: token.hasStoredTokens,
         token: token
       });
 
       // Pass user info and sign-in status to client
       session.user = token.user;
       session.isNewSignIn = token.isNewSignIn || false;
+      session.hasStoredTokens = token.hasStoredTokens || false;
       
-      // Always pass tokens if they exist so client can store them
-      if (token.accessToken && token.refreshToken) {
-        console.log('Including tokens in session');
-        session.tokens = {
-          accessToken: token.accessToken,
-          refreshToken: token.refreshToken,
-          expiresAt: token.expiresAt,
-        };
-        // Mark as needs storage if we have tokens
-        session.needsTokenStorage = true;
+      // Check if user needs to reconnect (no stored tokens)
+      if (!token.hasStoredTokens && !token.isNewSignIn) {
+        session.needsReconnect = true;
       }
       
       console.log('Final session object:', session);

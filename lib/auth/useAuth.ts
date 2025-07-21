@@ -2,95 +2,99 @@
 
 import { useSession, signIn, signOut } from 'next-auth/react';
 import { useEffect, useState } from 'react';
-import { tokenStore } from './tokenStore';
 
 export function useAuth() {
   const { data: session, status } = useSession();
   const [hasStoredTokens, setHasStoredTokens] = useState<boolean | null>(null);
 
-  // Handle storing tokens when they're available
+  // Check token status when session changes
   useEffect(() => {
-    const storeTokensOnSignIn = async () => {
+    const checkTokenStatus = async () => {
       console.log('useAuth session check:', {
         hasSession: !!session,
         isNewSignIn: session?.isNewSignIn,
-        needsTokenStorage: session?.needsTokenStorage,
-        hasTokens: !!session?.tokens,
+        hasStoredTokens: session?.hasStoredTokens,
+        needsReconnect: session?.needsReconnect,
         hasEmail: !!session?.user?.email,
-        session: session
       });
 
-      if (session?.tokens && session?.user?.email) {
-        try {
-          // Check if tokens are already stored
-          const existingTokens = await tokenStore.getTokens(session.user.email);
-          
-          if (!existingTokens) {
-            console.log('Storing tokens for user:', session.user.email);
-            console.log('Tokens to store:', session.tokens);
-            await tokenStore.saveTokens(
-              session.user.email,
-              session.tokens.accessToken,
-              session.tokens.refreshToken,
-              Math.floor((session.tokens.expiresAt - Date.now()) / 1000)
-            );
-            console.log('Tokens stored successfully in IndexedDB');
-            setHasStoredTokens(true);
-            sessionStorage.removeItem('needs_token_refresh');
-          } else {
-            console.log('Tokens already exist for user');
-            setHasStoredTokens(true);
+      if (session?.user?.email) {
+        if (session.hasStoredTokens) {
+          console.log('Session indicates tokens are stored in KV');
+          setHasStoredTokens(true);
+          if (typeof window !== 'undefined') {
             sessionStorage.removeItem('needs_token_refresh');
           }
-        } catch (error) {
-          console.error('Failed to store tokens in IndexedDB:', error);
+        } else if (session.needsReconnect) {
+          console.log('Session indicates user needs to reconnect for refresh token');
           setHasStoredTokens(false);
-        }
-      } else if (session?.user?.email && !session?.tokens) {
-        // Check if we have tokens in IndexedDB for existing session without tokens
-        try {
-          const existingTokens = await tokenStore.getTokens(session.user.email);
-          if (!existingTokens) {
-            console.log('No tokens found for existing user - they need to reconnect to enable cloud features');
+          if (typeof window !== 'undefined') {
             sessionStorage.setItem('needs_token_refresh', 'true');
-            setHasStoredTokens(false);
-          } else {
-            console.log('Found existing tokens for user');
-            sessionStorage.removeItem('needs_token_refresh');
-            setHasStoredTokens(true);
           }
-        } catch (error) {
-          console.error('Failed to check existing tokens:', error);
-          setHasStoredTokens(false);
+        } else {
+          // Check server-side token status
+          try {
+            const response = await fetch('/api/auth/tokens/store');
+            const data = await response.json();
+            
+            if (data.tokens) {
+              console.log('Found tokens in KV store');
+              setHasStoredTokens(true);
+              if (typeof window !== 'undefined') {
+                sessionStorage.removeItem('needs_token_refresh');
+              }
+            } else {
+              console.log('No tokens found in KV store');
+              setHasStoredTokens(false);
+              if (typeof window !== 'undefined') {
+                sessionStorage.setItem('needs_token_refresh', 'true');
+              }
+            }
+          } catch (error) {
+            console.error('Failed to check token status:', error);
+            setHasStoredTokens(false);
+          }
         }
       }
     };
 
-    storeTokensOnSignIn();
+    checkTokenStatus();
   }, [session]);
 
   return {
     user: session?.user,
     isAuthenticated: !!session,
     isLoading: status === 'loading',
-    needsReconnect: sessionStorage.getItem('needs_token_refresh') === 'true',
+    needsReconnect: typeof window !== 'undefined' ? sessionStorage.getItem('needs_token_refresh') === 'true' : false,
     signIn: () => signIn('google'),
-    signOut: () => {
-      // Clear tokens from IndexedDB on sign out
-      if (session?.user?.email) {
-        tokenStore.removeTokens(session.user.email).catch(console.error);
+    signOut: async () => {
+      // Don't clear tokens from KV - keep them for next sign-in
+      // Only clear the reconnect flag
+      if (typeof window !== 'undefined') {
+        sessionStorage.removeItem('needs_token_refresh');
       }
-      // Clear the reconnect flag
-      sessionStorage.removeItem('needs_token_refresh');
       signOut();
     },
-    reconnect: () => {
-      // Force sign out and back in to get fresh tokens
-      sessionStorage.removeItem('needs_token_refresh');
-      signOut().then(() => {
-        // After sign out, automatically trigger sign in
-        setTimeout(() => signIn('google'), 100);
-      });
+    reconnect: async () => {
+      if (typeof window !== 'undefined') {
+        sessionStorage.removeItem('needs_token_refresh');
+        
+        // Sign out first to clear session
+        await signOut({ redirect: false });
+        
+        // Wait a moment for sign out to complete
+        setTimeout(() => {
+          // Sign in with forced consent to get new refresh token
+          window.location.href = `https://accounts.google.com/o/oauth2/v2/auth?` +
+            `client_id=${process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID || '167211687388-26j9ni8hktae4db78tkci9htlkne4vpn.apps.googleusercontent.com'}&` +
+            `redirect_uri=${encodeURIComponent(window.location.origin + '/api/auth/callback/google')}&` +
+            `response_type=code&` +
+            `scope=${encodeURIComponent('openid email profile https://www.googleapis.com/auth/drive.file')}&` +
+            `access_type=offline&` +
+            `prompt=consent&` +
+            `state=${Math.random().toString(36).substring(7)}`;
+        }, 500);
+      }
     },
   };
 }
