@@ -29,6 +29,7 @@ export default function SetInputForm({ onSubmit, previousSets, barWeight = 45, e
     2.5: 0,
     5: 0
   });
+  const [showPlateBuilder, setShowPlateBuilder] = useState(false);
 
   // Load last workout data for this exercise and set number
   useEffect(() => {
@@ -392,16 +393,38 @@ export default function SetInputForm({ onSubmit, previousSets, barWeight = 45, e
           </div>
         </div>
 
+        {/* Submit Button */}
+        <Button
+          type="submit"
+          className="w-full"
+          size="lg"
+          disabled={!reps || !weight}
+        >
+          Log Set
+        </Button>
+
         {/* Barbell Plate Builder */}
         {exerciseType === 'barbell' && (
           <div className="bg-gray-50 rounded-lg p-4 space-y-4">
             <div className="flex justify-between items-center">
-              <h4 className="font-bold text-black">Plate Builder</h4>
+              <button
+                type="button"
+                onClick={() => setShowPlateBuilder(!showPlateBuilder)}
+                className="flex items-center gap-2 font-bold text-black hover:text-purple-600 transition-colors"
+              >
+                <span>Plate Builder</span>
+                <span className="text-sm">
+                  {showPlateBuilder ? '▼' : '▶'}
+                </span>
+              </button>
               <div className="text-right">
                 <div className="text-xs text-gray-600">Bar: {barWeight} lbs</div>
                 <div className="text-lg font-bold text-purple-600">Total: {calculateTotalWeight()} lbs</div>
               </div>
             </div>
+
+            {showPlateBuilder && (
+              <div className="space-y-4">
             
             {/* Barbell Visualization */}
             <div className="relative flex items-center justify-center bg-white rounded-lg p-4 min-h-[80px] border border-gray-200">
@@ -540,6 +563,8 @@ export default function SetInputForm({ onSubmit, previousSets, barWeight = 45, e
                 Bar Only
               </Button>
             </div>
+              </div>
+            )}
           </div>
         )}
 
@@ -552,16 +577,6 @@ export default function SetInputForm({ onSubmit, previousSets, barWeight = 45, e
             </p>
           </div>
         )}
-
-        {/* Submit Button */}
-        <Button
-          type="submit"
-          className="w-full"
-          size="lg"
-          disabled={!reps || !weight}
-        >
-          Log Set
-        </Button>
       </form>
     </Card>
   );
