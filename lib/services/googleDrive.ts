@@ -1,7 +1,44 @@
 import { showToast } from '@/lib/utils/toast';
 
+// Client-side backup list cache
+interface BackupCache {
+  backups: Array<{ id: string; name: string; createdTime: string }> | null;
+  expires: number;
+  lastUpdated: number;
+}
+
 // Client-side service that manages tokens via IndexedDB with KV fallback
 export class GoogleDriveService {
+  private backupCache: BackupCache = {
+    backups: null,
+    expires: 0,
+    lastUpdated: 0
+  };
+  
+  private readonly CACHE_DURATION = 10 * 60 * 1000; // 10 minutes
+
+  private isCacheValid(): boolean {
+    return this.backupCache.backups !== null && this.backupCache.expires > Date.now();
+  }
+
+  private invalidateCache(): void {
+    console.log('Invalidating backup cache');
+    this.backupCache = {
+      backups: null,
+      expires: 0,
+      lastUpdated: 0
+    };
+  }
+
+  private updateCache(backups: Array<{ id: string; name: string; createdTime: string }>): void {
+    const now = Date.now();
+    this.backupCache = {
+      backups,
+      expires: now + this.CACHE_DURATION,
+      lastUpdated: now
+    };
+    console.log(`Backup cache updated with ${backups.length} items, expires in ${this.CACHE_DURATION / 1000 / 60} minutes`);
+  }
   private async getValidAccessToken(): Promise<string | null> {
     try {
       // Get current session
@@ -128,6 +165,10 @@ export class GoogleDriveService {
       }
 
       const result = await response.json();
+      
+      // Invalidate cache since we've added a new backup
+      this.invalidateCache();
+      
       return result.fileId;
     } catch (error) {
       console.error('Failed to upload backup:', error);
@@ -201,8 +242,15 @@ export class GoogleDriveService {
     }
   }
 
-  async listBackups(): Promise<Array<{ id: string; name: string; createdTime: string }>> {
+  async listBackups(forceRefresh: boolean = false): Promise<Array<{ id: string; name: string; createdTime: string }>> {
     try {
+      // Return cached data if valid and not forcing refresh
+      if (!forceRefresh && this.isCacheValid()) {
+        console.log('Returning cached backup list');
+        return this.backupCache.backups!;
+      }
+
+      console.log('Fetching fresh backup list from Google Drive');
       const accessToken = await this.getValidAccessToken();
       if (!accessToken) {
         throw new Error('Authentication required');
@@ -219,9 +267,21 @@ export class GoogleDriveService {
       }
 
       const result = await response.json();
-      return result.backups || [];
+      const backups = result.backups || [];
+      
+      // Update cache with fresh data
+      this.updateCache(backups);
+      
+      return backups;
     } catch (error) {
       console.error('Failed to list backups:', error);
+      
+      // Fallback to cached data if available, even if expired
+      if (this.backupCache.backups !== null) {
+        console.log('API failed, returning stale cached backup list as fallback');
+        return this.backupCache.backups;
+      }
+      
       throw new Error('Failed to list backups from Google Drive');
     }
   }
@@ -245,6 +305,9 @@ export class GoogleDriveService {
       if (!response.ok) {
         throw new Error('Failed to delete backup');
       }
+      
+      // Invalidate cache since we've deleted a backup
+      this.invalidateCache();
     } catch (error) {
       console.error('Failed to delete backup:', error);
       throw new Error('Failed to delete backup from Google Drive');
@@ -377,8 +440,8 @@ export class SyncService {
     }
   }
 
-  async getBackupList() {
-    return await this.driveService.listBackups();
+  async getBackupList(forceRefresh: boolean = false) {
+    return await this.driveService.listBackups(forceRefresh);
   }
 
   async deleteBackup(fileId: string) {
@@ -400,8 +463,22 @@ export class SyncService {
       const now = new Date();
       const hoursSinceSync = (now.getTime() - lastSync.getTime()) / (1000 * 60 * 60);
 
-      // Auto-sync every 24 hours
+      // Auto-sync every 24 hours, but only if there are changes
       if (hoursSinceSync >= 24) {
+        const hasChanges = await this.hasLocalChanges(lastSync);
+        
+        if (!hasChanges) {
+          console.log('Auto-sync skipped: No local changes detected since last sync');
+          // Update last sync time to prevent constant checking
+          await db.updateSyncMeta({
+            ...syncMeta,
+            lastSyncTime: now,
+            lastSyncStatus: 'no_changes',
+          });
+          return;
+        }
+
+        console.log('Auto-sync proceeding: Local changes detected');
         await this.uploadBackup('daily_backup');
         
         await db.updateSyncMeta({
@@ -413,6 +490,42 @@ export class SyncService {
     } catch (error) {
       console.error('Auto-sync failed:', error);
       // Don't throw - auto-sync should fail silently
+    }
+  }
+
+  private async hasLocalChanges(lastSyncTime: Date): Promise<boolean> {
+    try {
+      const { getDB } = await import('@/lib/storage/indexedDB');
+      const db = await getDB();
+      
+      // Simple change detection: check if any items were created after last sync
+      const allWorkouts = await db.getWorkouts();
+      const allExercises = await db.getExercises();
+      const allTemplates = await db.getTemplates();
+      
+      const recentWorkouts = allWorkouts.filter(w => 
+        new Date(w.date) > lastSyncTime
+      );
+      
+      const recentExercises = allExercises.filter(e => 
+        new Date(e.lastUsed || e.created) > lastSyncTime
+      );
+      
+      const recentTemplates = allTemplates.filter(t => 
+        new Date(t.lastUsed || t.created) > lastSyncTime
+      );
+      
+      const hasChanges = recentWorkouts.length > 0 || 
+                        recentExercises.length > 0 || 
+                        recentTemplates.length > 0;
+      
+      console.log(`Change detection: ${recentWorkouts.length} workouts, ${recentExercises.length} exercises, ${recentTemplates.length} templates since ${lastSyncTime.toISOString()}`);
+      
+      return hasChanges;
+    } catch (error) {
+      console.error('Error checking for local changes:', error);
+      // If we can't check, assume there are changes to be safe
+      return true;
     }
   }
 

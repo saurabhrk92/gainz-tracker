@@ -160,7 +160,7 @@ export interface User {
 // Sync Metadata
 export interface SyncMetadata {
   lastSyncTime: Date;
-  lastSyncStatus: 'success' | 'failed' | 'pending';
+  lastSyncStatus: 'success' | 'failed' | 'pending' | 'no_changes';
   lastSyncError?: string;
   fileId?: string;
   folderId?: string;
