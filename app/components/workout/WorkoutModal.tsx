@@ -500,7 +500,7 @@ export default function WorkoutModal({ isOpen, onClose, templateId, workoutId }:
         </header>
 
         {/* Main Content */}
-        <main className="flex-1 p-4 space-y-4 pb-20 overflow-y-auto">
+        <main className="flex-1 p-4 space-y-4 pb-4 overflow-y-auto">
           {/* Workout Timer */}
           <WorkoutTimer
             isActive={isWorkoutTimerActive}
@@ -537,38 +537,10 @@ export default function WorkoutModal({ isOpen, onClose, templateId, workoutId }:
                   <div className="font-bold text-gray-800">{templateExercise.targetSets} sets</div>
                 </div>
               </div>
-
-              {/* Previous Sets */}
-              {currentSets.length > 0 && (
-                <div className="bg-gradient-to-br from-gray-50 to-gray-100/50 rounded-2xl p-4">
-                  <h4 className="font-bold text-gray-800 mb-3">Completed Sets:</h4>
-                  <div className="space-y-2">
-                    {currentSets.map((set, index) => (
-                      <div key={index} className="flex items-center justify-between bg-white/80 rounded-xl p-3">
-                        <span className="font-semibold text-gray-700">Set {index + 1}</span>
-                        <div className="flex items-center gap-4">
-                          <span className="text-sm font-medium">{set.reps} reps</span>
-                          <span className="text-sm font-medium">{set.weight} lbs</span>
-                          {currentExercise.type === 'barbell' && (
-                            <Button
-                              variant="glass"
-                              size="sm"
-                              onClick={() => handlePlateCalculator(set.weight)}
-                              className="text-xs"
-                            >
-                              <ActionIcon name="calculator" size={14} />
-                            </Button>
-                          )}
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              )}
             </div>
           </Card>
 
-          {/* Set Input */}
+          {/* Set Input - Moved up for easier access */}
           <SetInputForm 
             onSubmit={handleSetSubmit} 
             previousSets={currentSets} 
@@ -577,46 +549,80 @@ export default function WorkoutModal({ isOpen, onClose, templateId, workoutId }:
             exerciseType={currentExercise.type}
           />
 
-          {/* Navigation */}
-          <div className="grid grid-cols-2 gap-3">
-            <Button
-              onClick={handlePreviousExercise}
-              variant="secondary"
-              disabled={currentExerciseIndex === 0}
-              className="w-full"
-            >
-              <ActionIcon name="previous" size={16} className="mr-1" />
-              Previous
-            </Button>
-            <Button
-              onClick={handleNextExercise}
-              disabled={isLastExercise}
-              className="w-full"
-            >
-              {isLastExercise ? (
-                <>
-                  <ActionIcon name="finish" size={16} className="mr-1" />
-                  Last Exercise
-                </>
-              ) : (
-                <>
-                  <ActionIcon name="next" size={16} className="mr-1" />
-                  Next
-                </>
-              )}
-            </Button>
-          </div>
+          {/* Previous Sets */}
+          {currentSets.length > 0 && (
+            <Card>
+              <div className="bg-gradient-to-br from-gray-50 to-gray-100/50 rounded-2xl p-4">
+                <h4 className="font-bold text-gray-800 mb-3">Completed Sets:</h4>
+                <div className="space-y-2">
+                  {currentSets.map((set, index) => (
+                    <div key={index} className="flex items-center justify-between bg-white/80 rounded-xl p-3">
+                      <span className="font-semibold text-gray-700">Set {index + 1}</span>
+                      <div className="flex items-center gap-4">
+                        <span className="text-sm font-medium">{set.reps} reps</span>
+                        <span className="text-sm font-medium">{set.weight} lbs</span>
+                        {currentExercise.type === 'barbell' && (
+                          <Button
+                            variant="glass"
+                            size="sm"
+                            onClick={() => handlePlateCalculator(set.weight)}
+                            className="text-xs"
+                          >
+                            <ActionIcon name="calculator" size={14} />
+                          </Button>
+                        )}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </Card>
+          )}
 
-          {/* Workout Actions */}
-          <Button
-            onClick={handleEndWorkoutEarly}
-            variant="secondary"
-            className="w-full"
-            size="sm"
-          >
-            <ActionIcon name="stop" size={16} className="mr-1" />
-            End Workout Early
-          </Button>
+          {/* Navigation and Actions */}
+          <div className="space-y-3">
+            <div className="grid grid-cols-2 gap-3">
+              <Button
+                onClick={handlePreviousExercise}
+                variant="secondary"
+                disabled={currentExerciseIndex === 0}
+                className="w-full"
+              >
+                <ActionIcon name="previous" size={16} className="mr-1" />
+                Previous
+              </Button>
+              <Button
+                onClick={handleNextExercise}
+                disabled={isLastExercise}
+                className="w-full"
+              >
+                {isLastExercise ? (
+                  <>
+                    <ActionIcon name="finish" size={16} className="mr-1" />
+                    Last Exercise
+                  </>
+                ) : (
+                  <>
+                    <ActionIcon name="next" size={16} className="mr-1" />
+                    Next
+                  </>
+                )}
+              </Button>
+            </div>
+            
+            {/* End Workout Early - Compact */}
+            <div className="flex justify-center">
+              <Button
+                onClick={handleEndWorkoutEarly}
+                variant="secondary"
+                size="sm"
+                className="px-4"
+              >
+                <ActionIcon name="stop" size={14} className="mr-1" />
+                End Early
+              </Button>
+            </div>
+          </div>
 
           {/* Exercise Overview */}
           <Card>
