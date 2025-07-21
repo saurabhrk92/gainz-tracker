@@ -17,49 +17,58 @@ export default function RestTimer({ duration, onComplete, onCancel }: RestTimerP
   const [isActive, setIsActive] = useState(false);
   const [isCompleted, setIsCompleted] = useState(false);
   const intervalRef = useRef<NodeJS.Timeout | null>(null);
+  const startTimeRef = useRef<number | null>(null);
+  const pausedTimeRef = useRef<number>(0);
+  const pauseStartRef = useRef<number | null>(null);
 
   useEffect(() => {
     setTimeLeft(duration);
     setIsActive(true); // Auto-start timer when component mounts
     setIsCompleted(false);
+    startTimeRef.current = Date.now();
+    pausedTimeRef.current = 0;
+    pauseStartRef.current = null;
     
     // Request notification permission when timer starts
     requestNotificationPermission();
   }, [duration]);
 
   useEffect(() => {
-    if (isActive && timeLeft > 0) {
+    if (isActive && !isCompleted) {
       intervalRef.current = setInterval(() => {
-        setTimeLeft(prev => {
-          if (prev <= 1) {
-            setIsActive(false);
-            setIsCompleted(true);
-            onComplete?.();
-            
-            // Multi-modal notification: vibration + browser notification + audio
-            console.log('Rest timer complete - triggering notifications');
-            
-            // 1. Vibrate phone (works even when app is in background)
-            vibratePhone([500, 200, 500, 200, 500]);
-            
-            // 2. Show browser notification (works when app is in background)
-            showTimerNotification('Rest timer finished! Time to get back to your workout.');
-            
-            // 3. Play notification sound (if available and app is in foreground)
-            try {
-              const audio = new Audio('/notification.mp3');
-              audio.play().catch(() => {
-                console.log('Audio notification failed, but vibration and notification should still work');
-              });
-            } catch (error) {
-              console.log('Audio not available, relying on vibration and notifications');
-            }
-            
-            return 0;
+        if (startTimeRef.current === null) return;
+        
+        const now = Date.now();
+        const elapsed = now - startTimeRef.current - pausedTimeRef.current;
+        const remaining = Math.max(0, duration - Math.floor(elapsed / 1000));
+        
+        setTimeLeft(remaining);
+        
+        if (remaining <= 0) {
+          setIsActive(false);
+          setIsCompleted(true);
+          onComplete?.();
+          
+          // Multi-modal notification: vibration + browser notification + audio
+          console.log('Rest timer complete - triggering notifications');
+          
+          // 1. Vibrate phone (works even when app is in background)
+          vibratePhone([500, 200, 500, 200, 500]);
+          
+          // 2. Show browser notification (works when app is in background)
+          showTimerNotification('Rest timer finished! Time to get back to your workout.');
+          
+          // 3. Play notification sound (if available and app is in foreground)
+          try {
+            const audio = new Audio('/notification.mp3');
+            audio.play().catch(() => {
+              console.log('Audio notification failed, but vibration and notification should still work');
+            });
+          } catch (error) {
+            console.log('Audio not available, relying on vibration and notifications');
           }
-          return prev - 1;
-        });
-      }, 1000);
+        }
+      }, 100); // Update more frequently for smoother display
     } else {
       if (intervalRef.current) {
         clearInterval(intervalRef.current);
@@ -71,7 +80,7 @@ export default function RestTimer({ duration, onComplete, onCancel }: RestTimerP
         clearInterval(intervalRef.current);
       }
     };
-  }, [isActive, timeLeft, onComplete]);
+  }, [isActive, isCompleted, duration, onComplete]);
 
   const formatTime = (seconds: number) => {
     const mins = Math.floor(seconds / 60);
@@ -91,21 +100,38 @@ export default function RestTimer({ duration, onComplete, onCancel }: RestTimerP
   };
 
   const handleStart = () => {
+    if (startTimeRef.current === null) {
+      // First start
+      startTimeRef.current = Date.now();
+      pausedTimeRef.current = 0;
+    } else if (pauseStartRef.current !== null) {
+      // Resume from pause - add pause duration to total paused time
+      pausedTimeRef.current += Date.now() - pauseStartRef.current;
+      pauseStartRef.current = null;
+    }
     setIsActive(true);
     setIsCompleted(false);
   };
 
   const handlePause = () => {
     setIsActive(false);
+    pauseStartRef.current = Date.now();
   };
 
   const handleReset = () => {
     setTimeLeft(duration);
     setIsActive(false);
     setIsCompleted(false);
+    startTimeRef.current = null;
+    pausedTimeRef.current = 0;
+    pauseStartRef.current = null;
   };
 
   const handleAddTime = (seconds: number) => {
+    // Adjust the start time to effectively add/subtract seconds
+    if (startTimeRef.current !== null) {
+      startTimeRef.current -= seconds * 1000; // Move start time back to add more time
+    }
     setTimeLeft(prev => Math.max(0, prev + seconds));
   };
 
