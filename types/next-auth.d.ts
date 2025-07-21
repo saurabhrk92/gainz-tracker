@@ -9,6 +9,11 @@ declare module 'next-auth' {
     needsTokenStorage?: boolean;
     needsReconnect?: boolean;
     hasStoredTokens?: boolean;
+    storeInIndexedDB?: {
+      accessToken: string;
+      refreshToken: string;
+      expiresIn: number;
+    };
     tokens?: {
       accessToken: string;
       refreshToken?: string;
@@ -25,6 +30,11 @@ declare module 'next-auth/jwt' {
     error?: string;
     isNewSignIn?: boolean;
     hasStoredTokens?: boolean;
+    storeInIndexedDB?: {
+      accessToken: string;
+      refreshToken: string;
+      expiresIn: number;
+    };
     expiresAt?: number;
   }
 }

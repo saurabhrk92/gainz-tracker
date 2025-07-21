@@ -33,17 +33,18 @@ export const authOptions = {
         console.log('New sign-in detected, checking tokens in KV');
         
         let hasValidTokens = false;
+        let storeInIndexedDB = null;
         
-        // Only store tokens if we have a refresh token, or if no tokens exist yet
+        // Store tokens in both KV (server) and prepare for IndexedDB (client)
         if (account.access_token && user.email) {
           try {
             const { kvTokenStore } = await import('./kvTokenStore');
             
-            // Check if we already have tokens
+            // Check if we already have tokens in KV
             const existingTokens = await kvTokenStore.getTokens(user.email);
             
             if (account.refresh_token) {
-              // We have a refresh token - store it
+              // We have a refresh token - store it in KV
               await kvTokenStore.saveTokens(
                 user.email,
                 account.access_token,
@@ -52,6 +53,13 @@ export const authOptions = {
               );
               console.log('Tokens with refresh token stored in Vercel KV successfully');
               hasValidTokens = true;
+              
+              // Mark that we should also store in IndexedDB on client
+              storeInIndexedDB = {
+                accessToken: account.access_token,
+                refreshToken: account.refresh_token,
+                expiresIn: account.expires_in || 3600
+              };
             } else if (existingTokens?.refreshToken) {
               // No refresh token from Google, but we have existing ones - keep them
               console.log('No refresh token from Google, but existing tokens found in KV - keeping existing');
@@ -75,6 +83,7 @@ export const authOptions = {
             image: user.image,
           },
           hasStoredTokens: hasValidTokens,
+          storeInIndexedDB,
           isNewSignIn: true,
         };
         console.log('Created new JWT token:', newToken);
@@ -100,6 +109,7 @@ export const authOptions = {
       session.user = token.user;
       session.isNewSignIn = token.isNewSignIn || false;
       session.hasStoredTokens = token.hasStoredTokens || false;
+      session.storeInIndexedDB = token.storeInIndexedDB || null;
       
       // Check if user needs to reconnect (no stored tokens)
       if (!token.hasStoredTokens && !token.isNewSignIn) {

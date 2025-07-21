@@ -1,6 +1,6 @@
 import { showToast } from '@/lib/utils/toast';
 
-// Client-side service that manages tokens via KV store and calls API endpoints
+// Client-side service that manages tokens via IndexedDB with KV fallback
 export class GoogleDriveService {
   private async getValidAccessToken(): Promise<string | null> {
     try {
@@ -10,7 +10,34 @@ export class GoogleDriveService {
         return null;
       }
 
-      // Get tokens from KV store via API
+      // First check IndexedDB (fast, local)
+      const { tokenStore } = await import('@/lib/auth/tokenStore');
+      const localTokens = await tokenStore.getTokens(session.user.email);
+      
+      if (localTokens) {
+        // Check if token is expired or about to expire (5 min buffer)
+        const now = Date.now();
+        const bufferTime = 5 * 60 * 1000; // 5 minutes
+        
+        if (localTokens.expiresAt - bufferTime > now) {
+          // Token is still valid
+          return localTokens.accessToken;
+        }
+
+        // Token expired, refresh via API and update IndexedDB
+        if (localTokens.refreshToken) {
+          console.log('Access token expired, refreshing via API...');
+          const newToken = await this.refreshAccessToken();
+          if (newToken) {
+            // Update local cache with new token
+            await tokenStore.updateAccessToken(session.user.email, newToken, 3600);
+          }
+          return newToken;
+        }
+      }
+
+      // Fallback to KV store if IndexedDB doesn't have tokens
+      console.log('No valid tokens in IndexedDB, checking KV...');
       const tokenResponse = await fetch('/api/auth/tokens/store');
       const tokenData = await tokenResponse.json();
       
@@ -19,6 +46,15 @@ export class GoogleDriveService {
       }
 
       const tokens = tokenData.tokens;
+
+      // Sync tokens to IndexedDB for future use
+      await tokenStore.saveTokens(
+        session.user.email,
+        tokens.accessToken,
+        tokens.refreshToken,
+        Math.floor((tokens.expiresAt - Date.now()) / 1000)
+      );
+      console.log('Synced tokens from KV to IndexedDB');
 
       // Check if token is expired or about to expire (5 min buffer)
       const now = Date.now();
@@ -30,13 +66,14 @@ export class GoogleDriveService {
       }
 
       // Token expired or about to expire, try to refresh
-      console.log('Access token expired, attempting refresh...');
+      console.log('Access token expired, attempting refresh via API...');
       return await this.refreshAccessToken();
     } catch (error) {
       console.error('Failed to get valid access token:', error);
       return null;
     }
   }
+
 
   private async refreshAccessToken(): Promise<string> {
     try {
