@@ -10,6 +10,7 @@ export function useSync() {
   const [lastSyncTime, setLastSyncTime] = useState<Date | null>(null);
   const [syncStatus, setSyncStatus] = useState<'idle' | 'syncing' | 'success' | 'error'>('idle');
   const prevAuthenticatedRef = useRef<boolean | null>(null);
+  const restorationInProgress = useRef<boolean>(false);
 
   useEffect(() => {
     const wasAuthenticated = prevAuthenticatedRef.current;
@@ -23,7 +24,7 @@ export function useSync() {
       setSyncService(newSyncService);
       
       // Check if this is a fresh login (transition from false to true)
-      if (wasAuthenticated === false && isNowAuthenticated === true) {
+      if (wasAuthenticated === false && isNowAuthenticated === true && !restorationInProgress.current) {
         // Use the new sync service directly to avoid race condition
         handleFreshLogin(newSyncService);
       }
@@ -52,16 +53,22 @@ export function useSync() {
     const serviceToUse = syncServiceToUse || syncService;
     if (!serviceToUse) return;
 
-    // Check if we've already restored on this session to prevent duplicate restorations
+    // Check if we've already restored recently to prevent duplicate restorations
     const sessionKey = 'gainz_restore_attempted';
-    const hasAttemptedRestore = sessionStorage.getItem(sessionKey);
+    const lastAttempt = sessionStorage.getItem(sessionKey);
     
-    if (hasAttemptedRestore) {
-      console.log('Restore already attempted this session, skipping');
-      return;
+    if (lastAttempt) {
+      const lastAttemptTime = parseInt(lastAttempt);
+      const now = Date.now();
+      // Prevent restoration if attempted within the last 30 seconds
+      if (now - lastAttemptTime < 30000) {
+        console.log('Restore attempted recently, skipping to prevent loop');
+        return;
+      }
     }
 
     try {
+      restorationInProgress.current = true;
       console.log('Fresh login detected, checking for existing backup...');
       setSyncStatus('syncing');
       
@@ -79,8 +86,7 @@ export function useSync() {
         
         console.log('Backup restoration completed successfully');
         
-        // Reload the page to refresh all components with restored data
-        window.location.reload();
+        // Don't reload the page - let components handle the restored data naturally
       } else {
         console.log('No backups found, continuing with local data');
         setSyncStatus('success');
@@ -90,8 +96,9 @@ export function useSync() {
       setSyncStatus('error');
       // Don't throw - continue with local data if restoration fails
     } finally {
-      // Mark that we've attempted restoration for this session
-      sessionStorage.setItem(sessionKey, 'true');
+      // Mark that we've attempted restoration with current timestamp
+      sessionStorage.setItem(sessionKey, Date.now().toString());
+      restorationInProgress.current = false;
     }
   };
 
