@@ -49,11 +49,14 @@ export default function ProgressPage() {
       const workoutData = await db.getWorkouts(startDate, endDate);
       const exerciseData = await db.getExercises();
       
-      setWorkouts(workoutData.filter(w => w.status === 'completed'));
+      // Include both completed and ended early workouts for progress analysis
+      const analysisWorkouts = workoutData.filter(w => w.status === 'completed' || w.status === 'ended_early');
+      
+      setWorkouts(analysisWorkouts);
       setExercises(exerciseData);
       
       // Calculate 1RM and actual max data
-      await calculate1RMData(workoutData.filter(w => w.status === 'completed'), exerciseData);
+      await calculate1RMData(analysisWorkouts, exerciseData);
       
     } catch (error) {
       console.error('Failed to load progress data:', error);
