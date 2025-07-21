@@ -1,17 +1,88 @@
 import { showToast } from '@/lib/utils/toast';
+import { tokenStore } from '@/lib/auth/tokenStore';
+import { useSession } from 'next-auth/react';
 
-// Client-side service that calls our API endpoints
+// Client-side service that manages tokens and calls API endpoints
 export class GoogleDriveService {
-  constructor() {
-    // No longer need access token on client side
+  private async getValidAccessToken(): Promise<string | null> {
+    try {
+      // Get current session
+      const session = await fetch('/api/auth/session').then(r => r.json());
+      if (!session?.user?.email) {
+        return null;
+      }
+
+      const tokens = await tokenStore.getTokens(session.user.email);
+      if (!tokens) {
+        throw new Error('No tokens found for user');
+      }
+
+      // Check if token is expired or about to expire (5 min buffer)
+      const now = Date.now();
+      const bufferTime = 5 * 60 * 1000; // 5 minutes
+      
+      if (tokens.expiresAt - bufferTime > now) {
+        // Token is still valid
+        return tokens.accessToken;
+      }
+
+      // Token expired or about to expire
+      if (!tokens.refreshToken) {
+        throw new Error('No refresh token available');
+      }
+
+      // Refresh the token
+      console.log('Access token expired, refreshing...');
+      return await this.refreshAccessToken(session.user.email, tokens.refreshToken);
+    } catch (error) {
+      console.error('Failed to get valid access token:', error);
+      return null;
+    }
+  }
+
+  private async refreshAccessToken(email: string, refreshToken: string): Promise<string> {
+    try {
+      const response = await fetch('/api/auth/refresh', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ refreshToken }),
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to refresh token');
+      }
+
+      const data = await response.json();
+      
+      // Update stored tokens
+      await tokenStore.updateAccessToken(
+        email,
+        data.access_token,
+        data.expires_in || 3600
+      );
+
+      return data.access_token;
+    } catch (error) {
+      console.error('Error refreshing access token:', error);
+      throw new Error('Failed to refresh access token');
+    }
   }
 
   async uploadBackup(data: any): Promise<string> {
     try {
+      const accessToken = await this.getValidAccessToken();
+      if (!accessToken) {
+        showToast('Please connect to Google Drive in Settings to backup your data', 'warning');
+        throw new Error('Authentication required');
+      }
+
       const response = await fetch('/api/sync/backup', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
+          'Authorization': `Bearer ${accessToken}`,
         },
         body: JSON.stringify({ data }),
       });
@@ -39,7 +110,17 @@ export class GoogleDriveService {
 
   async downloadLatestBackup(): Promise<any> {
     try {
-      const response = await fetch('/api/sync/restore');
+      const accessToken = await this.getValidAccessToken();
+      if (!accessToken) {
+        showToast('Please connect to Google Drive in Settings to backup your data', 'warning');
+        throw new Error('Authentication required');
+      }
+
+      const response = await fetch('/api/sync/restore', {
+        headers: {
+          'Authorization': `Bearer ${accessToken}`,
+        },
+      });
 
       if (response.status === 401) {
         showToast('Please connect to Google Drive in Settings to backup your data', 'warning');
@@ -67,7 +148,16 @@ export class GoogleDriveService {
 
   async downloadBackup(fileId: string): Promise<any> {
     try {
-      const response = await fetch(`/api/sync/restore?fileId=${fileId}`);
+      const accessToken = await this.getValidAccessToken();
+      if (!accessToken) {
+        throw new Error('Authentication required');
+      }
+
+      const response = await fetch(`/api/sync/restore?fileId=${fileId}`, {
+        headers: {
+          'Authorization': `Bearer ${accessToken}`,
+        },
+      });
 
       if (!response.ok) {
         throw new Error('Failed to download backup');
@@ -83,7 +173,16 @@ export class GoogleDriveService {
 
   async listBackups(): Promise<Array<{ id: string; name: string; createdTime: string }>> {
     try {
-      const response = await fetch('/api/sync/list');
+      const accessToken = await this.getValidAccessToken();
+      if (!accessToken) {
+        throw new Error('Authentication required');
+      }
+
+      const response = await fetch('/api/sync/list', {
+        headers: {
+          'Authorization': `Bearer ${accessToken}`,
+        },
+      });
 
       if (!response.ok) {
         throw new Error('Failed to list backups');
@@ -99,10 +198,16 @@ export class GoogleDriveService {
 
   async deleteBackup(fileId: string): Promise<void> {
     try {
+      const accessToken = await this.getValidAccessToken();
+      if (!accessToken) {
+        throw new Error('Authentication required');
+      }
+
       const response = await fetch('/api/sync/list', {
         method: 'DELETE',
         headers: {
           'Content-Type': 'application/json',
+          'Authorization': `Bearer ${accessToken}`,
         },
         body: JSON.stringify({ fileId }),
       });

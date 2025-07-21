@@ -70,7 +70,7 @@ export const TIME_RANGES = [
 ] as const;
 
 export const DB_NAME = 'WeightliftingTracker';
-export const DB_VERSION = 1;
+export const DB_VERSION = 2;
 
 export const GOOGLE_DRIVE_FILE_NAME = 'weightlifting_data.csv';
 export const GOOGLE_DRIVE_FOLDER_NAME = 'WeightLiftingTracker';

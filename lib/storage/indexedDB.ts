@@ -4,7 +4,8 @@ import {
   WorkoutSession, 
   MuscleGroup, 
   WeekDay,
-  SyncMetadata 
+  SyncMetadata,
+  UserTokens
 } from '../types';
 import { DB_NAME, DB_VERSION } from '../constants';
 
@@ -53,6 +54,13 @@ export class IndexedDBService {
         // Create sync metadata object store
         if (!db.objectStoreNames.contains('sync_meta')) {
           db.createObjectStore('sync_meta', { keyPath: 'key' });
+        }
+        
+        // Create tokens object store
+        if (!db.objectStoreNames.contains('user_tokens')) {
+          const tokenStore = db.createObjectStore('user_tokens', { keyPath: 'userId' });
+          tokenStore.createIndex('expiresAt', 'expiresAt');
+          tokenStore.createIndex('lastUpdated', 'lastUpdated');
         }
       };
     });
@@ -276,6 +284,38 @@ export class IndexedDBService {
     await this.promisifyRequest(store.put({ key: 'sync_metadata', ...meta }));
   }
 
+  // Token operations
+  async saveUserTokens(tokens: UserTokens): Promise<void> {
+    this.ensureDb();
+    const transaction = this.db!.transaction(['user_tokens'], 'readwrite');
+    const store = transaction.objectStore('user_tokens');
+    await this.promisifyRequest(store.put(tokens));
+  }
+
+  async getUserTokens(userId: string): Promise<UserTokens | null> {
+    this.ensureDb();
+    const transaction = this.db!.transaction(['user_tokens'], 'readonly');
+    const store = transaction.objectStore('user_tokens');
+    const tokens = await this.promisifyRequest(store.get(userId));
+    return tokens || null;
+  }
+
+  async updateUserTokens(userId: string, updates: Partial<UserTokens>): Promise<void> {
+    this.ensureDb();
+    const existing = await this.getUserTokens(userId);
+    if (existing) {
+      const updatedTokens = { ...existing, ...updates, lastUpdated: new Date() };
+      await this.saveUserTokens(updatedTokens);
+    }
+  }
+
+  async removeUserTokens(userId: string): Promise<void> {
+    this.ensureDb();
+    const transaction = this.db!.transaction(['user_tokens'], 'readwrite');
+    const store = transaction.objectStore('user_tokens');
+    await this.promisifyRequest(store.delete(userId));
+  }
+
   // Utility methods
   private promisifyRequest<T>(request: IDBRequest<T>): Promise<T> {
     return new Promise((resolve, reject) => {
@@ -336,12 +376,13 @@ export class IndexedDBService {
   async clearAll(): Promise<void> {
     this.ensureDb();
     
-    const transaction = this.db!.transaction(['exercises', 'templates', 'workouts', 'sync_meta'], 'readwrite');
+    const transaction = this.db!.transaction(['exercises', 'templates', 'workouts', 'sync_meta', 'user_tokens'], 'readwrite');
     
     await this.promisifyRequest(transaction.objectStore('exercises').clear());
     await this.promisifyRequest(transaction.objectStore('templates').clear());
     await this.promisifyRequest(transaction.objectStore('workouts').clear());
     await this.promisifyRequest(transaction.objectStore('sync_meta').clear());
+    await this.promisifyRequest(transaction.objectStore('user_tokens').clear());
   }
 }
 

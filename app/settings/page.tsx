@@ -9,7 +9,7 @@ import ConfirmModal from '../components/ui/ConfirmModal';
 import { formatDate } from '@/lib/utils';
 
 export default function SettingsPage() {
-  const { user, isAuthenticated, signIn, signOut } = useAuth();
+  const { user, isAuthenticated, signIn, signOut, needsReconnect, reconnect } = useAuth();
   const [syncService, setSyncService] = useState<SyncService | null>(null);
   const [backups, setBackups] = useState<Array<{ id: string; name: string; createdTime: string }>>([]);
   const [loading, setLoading] = useState(false);
@@ -222,6 +222,25 @@ export default function SettingsPage() {
           <Card>
             <h2 className="text-lg font-bold text-black mb-4">Sync & Backup</h2>
             
+            {needsReconnect && (
+              <div className="mb-4 p-4 bg-orange-50 border border-orange-200 rounded-lg">
+                <div className="flex items-center gap-3 mb-3">
+                  <div className="text-orange-600 text-xl">⚠️</div>
+                  <div>
+                    <p className="text-orange-800 font-medium">Cloud features need reconnection</p>
+                    <p className="text-orange-700 text-sm">To enable backup and sync, please reconnect your Google account.</p>
+                  </div>
+                </div>
+                <Button
+                  onClick={reconnect}
+                  className="w-full"
+                  size="md"
+                >
+                  Reconnect Google Drive
+                </Button>
+              </div>
+            )}
+            
             {syncStatus && (
               <div className="mb-4 p-3 bg-blue-50 border border-blue-200 rounded-lg">
                 <p className="text-blue-800 text-sm font-medium">{syncStatus}</p>
@@ -252,7 +271,7 @@ export default function SettingsPage() {
                 
                 <div className="text-center bg-white rounded-lg p-3 border border-gray-200">
                   <p className="text-sm text-gray-600">
-                    Automatic backup happens every 24 hours
+                    Auto-backup: After workouts, template changes & when you return after 24+ hours
                   </p>
                 </div>
               </div>

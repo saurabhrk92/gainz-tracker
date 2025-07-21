@@ -165,3 +165,12 @@ export interface SyncMetadata {
   fileId?: string;
   folderId?: string;
 }
+
+// OAuth Token Storage
+export interface UserTokens {
+  userId: string; // user email
+  accessToken: string;
+  refreshToken?: string;
+  expiresAt: number; // timestamp
+  lastUpdated: Date;
+}

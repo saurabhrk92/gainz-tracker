@@ -1,40 +1,28 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { getServerSession } from 'next-auth/next';
-import { authOptions } from '@/lib/auth/authOptions';
-import { createAuthenticatedDriveClient } from '@/lib/auth/tokenRefresh';
+import { google } from 'googleapis';
 
 export async function GET(request: NextRequest) {
   try {
     console.log('Restore endpoint called');
-    const session = await getServerSession(authOptions);
-    console.log('Session exists:', !!session);
-    console.log('Access token exists:', !!session?.accessToken);
     
-    if (!session?.accessToken) {
-      console.log('No access token found');
+    // Get access token from Authorization header
+    const authHeader = request.headers.get('authorization');
+    if (!authHeader || !authHeader.startsWith('Bearer ')) {
+      console.log('No access token found in Authorization header');
       return NextResponse.json({ error: 'Not authenticated' }, { status: 401 });
     }
+    
+    const accessToken = authHeader.substring(7); // Remove 'Bearer ' prefix
 
     const url = new URL(request.url);
     const fileId = url.searchParams.get('fileId');
     console.log('File ID requested:', fileId);
 
-    // Set up Google Drive client - use refresh if available, otherwise fallback to simple auth
+    // Set up Google Drive client with the valid access token
     console.log('Setting up Google Drive client');
-    let drive;
-    if (session.refreshToken) {
-      const { drive: refreshDrive } = await createAuthenticatedDriveClient({
-        accessToken: session.accessToken,
-        refreshToken: session.refreshToken,
-      });
-      drive = refreshDrive;
-    } else {
-      // Fallback to simple auth without refresh
-      const { google } = await import('googleapis');
-      const auth = new google.auth.OAuth2();
-      auth.setCredentials({ access_token: session.accessToken });
-      drive = google.drive({ version: 'v3', auth });
-    }
+    const auth = new google.auth.OAuth2();
+    auth.setCredentials({ access_token: accessToken });
+    const drive = google.drive({ version: 'v3', auth });
 
     if (fileId) {
       // Read specific backup content
