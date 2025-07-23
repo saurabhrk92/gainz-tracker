@@ -98,6 +98,26 @@ export default function HistoryPage() {
     setSelectedWorkoutId(null);
   };
 
+  const handleDeleteWorkout = async (workoutId: string, event: React.MouseEvent) => {
+    event.stopPropagation(); // Prevent opening workout details
+    
+    const confirmed = confirm('Are you sure you want to delete this workout? This action cannot be undone.');
+    if (!confirmed) return;
+    
+    try {
+      const db = await getDB();
+      await db.deleteWorkout(workoutId);
+      
+      // Remove from local state
+      setWorkouts(prevWorkouts => prevWorkouts.filter(w => w.id !== workoutId));
+      
+      console.log('Workout deleted successfully');
+    } catch (error) {
+      console.error('Failed to delete workout:', error);
+      alert('Failed to delete workout. Please try again.');
+    }
+  };
+
 
   if (loading) {
     return (
@@ -161,24 +181,37 @@ export default function HistoryPage() {
                           {workout.exercises.length} exercises • {duration}
                         </p>
                       </div>
-                      <div className="text-right">
-                        <div className="space-y-1">
-                          {getWorkoutMuscleGroupVolumes(workout).map(([muscleGroup, mgVolume]) => {
-                            const muscleInfo = MUSCLE_GROUPS[muscleGroup as keyof typeof MUSCLE_GROUPS];
-                            return (
-                              <div key={muscleGroup} className="flex items-center gap-1 justify-end">
-                                <span className="text-xs font-medium" style={{ color: muscleInfo.color }}>
-                                  {Math.round(mgVolume)} lbs
-                                </span>
-                                <MuscleGroupIcon 
-                                  name={muscleInfo.icon as any} 
-                                  size={12} 
-                                  color={muscleInfo.color}
-                                />
-                              </div>
-                            );
-                          })}
+                      <div className="flex items-start gap-3">
+                        <div className="text-right">
+                          <div className="space-y-1">
+                            {getWorkoutMuscleGroupVolumes(workout).map(([muscleGroup, mgVolume]) => {
+                              const muscleInfo = MUSCLE_GROUPS[muscleGroup as keyof typeof MUSCLE_GROUPS];
+                              return (
+                                <div key={muscleGroup} className="flex items-center gap-1 justify-end">
+                                  <span className="text-xs font-medium" style={{ color: muscleInfo.color }}>
+                                    {Math.round(mgVolume)} lbs
+                                  </span>
+                                  <MuscleGroupIcon 
+                                    name={muscleInfo.icon as any} 
+                                    size={12} 
+                                    color={muscleInfo.color}
+                                  />
+                                </div>
+                              );
+                            })}
+                          </div>
                         </div>
+                        
+                        {/* Delete Button - Only show for completed/ended workouts */}
+                        {(isCompleted || isEndedEarly) && (
+                          <button
+                            onClick={(e) => handleDeleteWorkout(workout.id, e)}
+                            className="p-1 text-gray-400 hover:text-red-600 transition-colors rounded"
+                            title="Delete Workout"
+                          >
+                            <ActionIcon name="delete" size={16} />
+                          </button>
+                        )}
                       </div>
                     </div>
                     

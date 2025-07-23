@@ -455,8 +455,15 @@ export default function WorkoutModal({ isOpen, onClose, templateId, workoutId }:
     const newReps = parseInt(editReps);
     const newWeight = parseFloat(editWeight);
     
-    if (isNaN(newReps) || isNaN(newWeight) || newReps <= 0 || newWeight < 0) {
+    if (isNaN(newReps) || isNaN(newWeight) || newReps <= 0) {
       alert('Please enter valid reps and weight values');
+      return;
+    }
+    
+    // Check weight validation based on exercise type
+    const currentExercise = exercises[currentExerciseIndex];
+    if (currentExercise && currentExercise.type !== 'bodyweight' && newWeight <= 0) {
+      alert('Please enter a valid weight greater than 0');
       return;
     }
     

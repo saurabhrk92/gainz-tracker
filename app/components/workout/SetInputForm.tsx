@@ -210,7 +210,8 @@ export default function SetInputForm({ onSubmit, previousSets, barWeight = 45, e
       return;
     }
     
-    // For bodyweight exercises, 0 weight is valid
+    // For bodyweight exercises, negative weight is valid (assisted exercises)
+    // For other exercises, weight must be greater than 0
     if (exerciseType !== 'bodyweight' && weightNum <= 0) {
       alert('Please enter a valid weight greater than 0');
       return;
