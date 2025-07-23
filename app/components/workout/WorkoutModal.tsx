@@ -43,6 +43,9 @@ export default function WorkoutModal({ isOpen, onClose, templateId, workoutId }:
   const [totalSetsLogged, setTotalSetsLogged] = useState(0);
   const [lastSetTime, setLastSetTime] = useState<Date | null>(null);
   const [timeoutWarningShown, setTimeoutWarningShown] = useState(false);
+  const [editingSet, setEditingSet] = useState<{exerciseId: string, setIndex: number} | null>(null);
+  const [editReps, setEditReps] = useState('');
+  const [editWeight, setEditWeight] = useState('');
 
   useEffect(() => {
     if (isOpen && (templateId || workoutId)) {
@@ -440,6 +443,127 @@ export default function WorkoutModal({ isOpen, onClose, templateId, workoutId }:
     setShowPlateCalculator(true);
   };
 
+  const handleEditSet = (exerciseId: string, setIndex: number, currentSet: { reps: number; weight: number }) => {
+    setEditingSet({ exerciseId, setIndex });
+    setEditReps(currentSet.reps.toString());
+    setEditWeight(currentSet.weight.toString());
+  };
+
+  const handleSaveEdit = async () => {
+    if (!editingSet || !workoutSessionId) return;
+    
+    const newReps = parseInt(editReps);
+    const newWeight = parseFloat(editWeight);
+    
+    if (isNaN(newReps) || isNaN(newWeight) || newReps <= 0 || newWeight < 0) {
+      alert('Please enter valid reps and weight values');
+      return;
+    }
+    
+    try {
+      const db = await getDB();
+      const currentWorkout = await db.getWorkoutById(workoutSessionId);
+      
+      if (currentWorkout) {
+        // Update the specific set
+        const updatedExercises = currentWorkout.exercises.map(ex => {
+          if (ex.exerciseId === editingSet.exerciseId) {
+            const updatedSets = [...ex.sets];
+            updatedSets[editingSet.setIndex] = { reps: newReps, weight: newWeight };
+            return {
+              ...ex,
+              sets: updatedSets,
+              completedSets: updatedSets.length
+            };
+          }
+          return ex;
+        });
+        
+        // Calculate total volume
+        const totalVolume = updatedExercises.reduce((total, ex) => {
+          return total + ex.sets.reduce((exTotal, set) => exTotal + (set.reps * set.weight), 0);
+        }, 0);
+        
+        // Update the workout in database
+        await db.updateWorkout(workoutSessionId, {
+          exercises: updatedExercises,
+          duration: Math.floor((Date.now() - workoutStartTime!.getTime()) / 1000),
+          totalVolume
+        });
+        
+        // Update local state
+        const updatedLocalSets = { ...sets };
+        updatedLocalSets[editingSet.exerciseId][editingSet.setIndex] = { reps: newReps, weight: newWeight };
+        setSets(updatedLocalSets);
+        
+        console.log('Set updated successfully');
+      }
+    } catch (error) {
+      console.error('Failed to update set:', error);
+      alert('Failed to update set. Please try again.');
+    }
+    
+    // Close edit mode
+    setEditingSet(null);
+    setEditReps('');
+    setEditWeight('');
+  };
+
+  const handleDeleteSet = async (exerciseId: string, setIndex: number) => {
+    if (!workoutSessionId) return;
+    
+    const confirmed = confirm('Are you sure you want to delete this set?');
+    if (!confirmed) return;
+    
+    try {
+      const db = await getDB();
+      const currentWorkout = await db.getWorkoutById(workoutSessionId);
+      
+      if (currentWorkout) {
+        // Remove the specific set
+        const updatedExercises = currentWorkout.exercises.map(ex => {
+          if (ex.exerciseId === exerciseId) {
+            const updatedSets = ex.sets.filter((_, index) => index !== setIndex);
+            return {
+              ...ex,
+              sets: updatedSets,
+              completedSets: updatedSets.length
+            };
+          }
+          return ex;
+        });
+        
+        // Calculate total volume
+        const totalVolume = updatedExercises.reduce((total, ex) => {
+          return total + ex.sets.reduce((exTotal, set) => exTotal + (set.reps * set.weight), 0);
+        }, 0);
+        
+        // Update the workout in database
+        await db.updateWorkout(workoutSessionId, {
+          exercises: updatedExercises,
+          duration: Math.floor((Date.now() - workoutStartTime!.getTime()) / 1000),
+          totalVolume
+        });
+        
+        // Update local state
+        const updatedLocalSets = { ...sets };
+        updatedLocalSets[exerciseId] = updatedLocalSets[exerciseId].filter((_, index) => index !== setIndex);
+        setSets(updatedLocalSets);
+        
+        console.log('Set deleted successfully');
+      }
+    } catch (error) {
+      console.error('Failed to delete set:', error);
+      alert('Failed to delete set. Please try again.');
+    }
+  };
+
+  const handleCancelEdit = () => {
+    setEditingSet(null);
+    setEditReps('');
+    setEditWeight('');
+  };
+
   if (!isOpen) return null;
 
   if (loading || !template || exercises.length === 0) {
@@ -555,25 +679,104 @@ export default function WorkoutModal({ isOpen, onClose, templateId, workoutId }:
               <div className="bg-gradient-to-br from-gray-50 to-gray-100/50 rounded-2xl p-4">
                 <h4 className="font-bold text-gray-800 mb-3">Completed Sets:</h4>
                 <div className="space-y-2">
-                  {currentSets.map((set, index) => (
-                    <div key={index} className="flex items-center justify-between bg-white/80 rounded-xl p-3">
-                      <span className="font-semibold text-gray-700">Set {index + 1}</span>
-                      <div className="flex items-center gap-4">
-                        <span className="text-sm font-medium">{set.reps} reps</span>
-                        <span className="text-sm font-medium">{set.weight} lbs</span>
-                        {currentExercise.type === 'barbell' && (
-                          <Button
-                            variant="glass"
-                            size="sm"
-                            onClick={() => handlePlateCalculator(set.weight)}
-                            className="text-xs"
-                          >
-                            <ActionIcon name="calculator" size={14} />
-                          </Button>
-                        )}
+                  {currentSets.map((set, index) => {
+                    const isEditing = editingSet?.exerciseId === templateExercise.exerciseId && editingSet?.setIndex === index;
+                    
+                    if (isEditing) {
+                      return (
+                        <div key={index} className="bg-blue-50 border border-blue-200 rounded-xl p-3">
+                          <div className="flex items-center justify-between mb-2">
+                            <span className="font-semibold text-blue-800">Edit Set {index + 1}</span>
+                          </div>
+                          <div className="grid grid-cols-2 gap-2 mb-3">
+                            <div>
+                              <label className="block text-xs font-medium text-gray-600 mb-1">Reps</label>
+                              <input
+                                type="number"
+                                value={editReps}
+                                onChange={(e) => setEditReps(e.target.value)}
+                                className="w-full px-2 py-1 text-sm border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
+                                min="1"
+                                max="100"
+                              />
+                            </div>
+                            <div>
+                              <label className="block text-xs font-medium text-gray-600 mb-1">Weight (lbs)</label>
+                              <input
+                                type="number"
+                                value={editWeight}
+                                onChange={(e) => setEditWeight(e.target.value)}
+                                className="w-full px-2 py-1 text-sm border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
+                                min="0"
+                                step="2.5"
+                              />
+                            </div>
+                          </div>
+                          <div className="flex gap-2">
+                            <Button
+                              variant="primary"
+                              size="sm"
+                              onClick={handleSaveEdit}
+                              className="flex-1 text-xs"
+                            >
+                              Save
+                            </Button>
+                            <Button
+                              variant="secondary"
+                              size="sm"
+                              onClick={handleCancelEdit}
+                              className="flex-1 text-xs"
+                            >
+                              Cancel
+                            </Button>
+                          </div>
+                        </div>
+                      );
+                    }
+                    
+                    return (
+                      <div key={index} className="flex items-center justify-between bg-white/80 rounded-xl p-3">
+                        <span className="font-semibold text-gray-700">Set {index + 1}</span>
+                        <div className="flex items-center gap-2">
+                          <span className="text-sm font-medium">{set.reps} reps</span>
+                          <span className="text-sm font-medium">{set.weight} lbs</span>
+                          
+                          {/* Action Buttons */}
+                          <div className="flex items-center gap-1">
+                            {currentExercise.type === 'barbell' && (
+                              <Button
+                                variant="glass"
+                                size="sm"
+                                onClick={() => handlePlateCalculator(set.weight)}
+                                className="text-xs"
+                                title="Plate Calculator"
+                              >
+                                <ActionIcon name="calculator" size={12} />
+                              </Button>
+                            )}
+                            <Button
+                              variant="glass"
+                              size="sm"
+                              onClick={() => handleEditSet(templateExercise.exerciseId, index, set)}
+                              className="text-xs"
+                              title="Edit Set"
+                            >
+                              ✏️
+                            </Button>
+                            <Button
+                              variant="glass"
+                              size="sm"
+                              onClick={() => handleDeleteSet(templateExercise.exerciseId, index)}
+                              className="text-xs text-red-600"
+                              title="Delete Set"
+                            >
+                              <ActionIcon name="delete" size={12} />
+                            </Button>
+                          </div>
+                        </div>
                       </div>
-                    </div>
-                  ))}
+                    );
+                  })}
                 </div>
               </div>
             </Card>
