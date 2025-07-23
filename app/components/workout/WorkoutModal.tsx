@@ -13,6 +13,7 @@ import SetInputForm from './SetInputForm';
 import Button from '../ui/Button';
 import Card from '../ui/Card';
 import Modal from '../ui/Modal';
+import ConfirmModal from '../ui/ConfirmModal';
 import { MuscleGroupIcon, ActionIcon } from '../ui/Icon';
 import { useSync } from '@/lib/hooks/useSync';
 
@@ -46,6 +47,9 @@ export default function WorkoutModal({ isOpen, onClose, templateId, workoutId }:
   const [editingSet, setEditingSet] = useState<{exerciseId: string, setIndex: number} | null>(null);
   const [editReps, setEditReps] = useState('');
   const [editWeight, setEditWeight] = useState('');
+  const [showEndWorkoutConfirm, setShowEndWorkoutConfirm] = useState(false);
+  const [showDeleteSetConfirm, setShowDeleteSetConfirm] = useState(false);
+  const [setToDelete, setSetToDelete] = useState<{exerciseId: string, setIndex: number} | null>(null);
 
   useEffect(() => {
     if (isOpen && (templateId || workoutId)) {
@@ -384,15 +388,12 @@ export default function WorkoutModal({ isOpen, onClose, templateId, workoutId }:
     }
   };
 
-  const handleEndWorkoutEarly = async () => {
-    if (!workoutSessionId) return;
+  const handleEndWorkoutEarly = () => {
+    setShowEndWorkoutConfirm(true);
+  };
 
-    // Show confirmation dialog
-    const confirmed = confirm(
-      'Are you sure you want to end this workout early? This workout will be marked as ended and cannot be resumed.'
-    );
-    
-    if (!confirmed) return;
+  const confirmEndWorkoutEarly = async () => {
+    if (!workoutSessionId) return;
     
     try {
       const db = await getDB();
@@ -516,11 +517,13 @@ export default function WorkoutModal({ isOpen, onClose, templateId, workoutId }:
     setEditWeight('');
   };
 
-  const handleDeleteSet = async (exerciseId: string, setIndex: number) => {
-    if (!workoutSessionId) return;
-    
-    const confirmed = confirm('Are you sure you want to delete this set?');
-    if (!confirmed) return;
+  const handleDeleteSet = (exerciseId: string, setIndex: number) => {
+    setSetToDelete({ exerciseId, setIndex });
+    setShowDeleteSetConfirm(true);
+  };
+
+  const confirmDeleteSet = async () => {
+    if (!workoutSessionId || !setToDelete) return;
     
     try {
       const db = await getDB();
@@ -529,8 +532,8 @@ export default function WorkoutModal({ isOpen, onClose, templateId, workoutId }:
       if (currentWorkout) {
         // Remove the specific set
         const updatedExercises = currentWorkout.exercises.map(ex => {
-          if (ex.exerciseId === exerciseId) {
-            const updatedSets = ex.sets.filter((_, index) => index !== setIndex);
+          if (ex.exerciseId === setToDelete.exerciseId) {
+            const updatedSets = ex.sets.filter((_, index) => index !== setToDelete.setIndex);
             return {
               ...ex,
               sets: updatedSets,
@@ -554,7 +557,7 @@ export default function WorkoutModal({ isOpen, onClose, templateId, workoutId }:
         
         // Update local state
         const updatedLocalSets = { ...sets };
-        updatedLocalSets[exerciseId] = updatedLocalSets[exerciseId].filter((_, index) => index !== setIndex);
+        updatedLocalSets[setToDelete.exerciseId] = updatedLocalSets[setToDelete.exerciseId].filter((_, index) => index !== setToDelete.setIndex);
         setSets(updatedLocalSets);
         
         console.log('Set deleted successfully');
@@ -562,6 +565,8 @@ export default function WorkoutModal({ isOpen, onClose, templateId, workoutId }:
     } catch (error) {
       console.error('Failed to delete set:', error);
       alert('Failed to delete set. Please try again.');
+    } finally {
+      setSetToDelete(null);
     }
   };
 
@@ -906,6 +911,28 @@ export default function WorkoutModal({ isOpen, onClose, templateId, workoutId }:
             onClose={() => setShowPlateCalculator(false)}
           />
         </Modal>
+
+        {/* End Workout Early Confirmation */}
+        <ConfirmModal
+          isOpen={showEndWorkoutConfirm}
+          onClose={() => setShowEndWorkoutConfirm(false)}
+          onConfirm={confirmEndWorkoutEarly}
+          title="End Workout Early"
+          message="Are you sure you want to end this workout early? This workout will be marked as ended and cannot be resumed."
+          confirmText="End Workout"
+          variant="warning"
+        />
+
+        {/* Delete Set Confirmation */}
+        <ConfirmModal
+          isOpen={showDeleteSetConfirm}
+          onClose={() => setShowDeleteSetConfirm(false)}
+          onConfirm={confirmDeleteSet}
+          title="Delete Set"
+          message="Are you sure you want to delete this set?"
+          confirmText="Delete"
+          variant="danger"
+        />
       </div>
     </div>
   );

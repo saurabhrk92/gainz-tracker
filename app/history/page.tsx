@@ -2,10 +2,11 @@
 
 import { useState, useEffect } from 'react';
 import Card from '../components/ui/Card';
+import ConfirmModal from '../components/ui/ConfirmModal';
 import WorkoutDetailsModal from '../components/workout/WorkoutDetailsModal';
 import { WorkoutSession, Exercise } from '@/lib/types';
 import { getDB } from '@/lib/storage/indexedDB';
-import { formatDate, calculateVolume } from '@/lib/utils';
+import { formatDate } from '@/lib/utils';
 import { MUSCLE_GROUPS } from '@/lib/constants';
 import { UIIcon, ActionIcon, MuscleGroupIcon } from '../components/ui/Icon';
 
@@ -15,6 +16,8 @@ export default function HistoryPage() {
   const [exercises, setExercises] = useState<Exercise[]>([]);
   const [showWorkoutDetails, setShowWorkoutDetails] = useState(false);
   const [selectedWorkoutId, setSelectedWorkoutId] = useState<string | null>(null);
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+  const [workoutToDelete, setWorkoutToDelete] = useState<string | null>(null);
 
   useEffect(() => {
     loadWorkoutHistory();
@@ -55,14 +58,6 @@ export default function HistoryPage() {
     return `${hours}h ${remainingMinutes}m`;
   };
 
-  const getWorkoutVolume = (workout: WorkoutSession): number => {
-    let totalVolume = 0;
-    workout.exercises.forEach(exercise => {
-      totalVolume += calculateVolume(exercise.sets);
-    });
-    return totalVolume;
-  };
-
   const getExerciseName = (exerciseId: string): string => {
     const exercise = exercises.find(ex => ex.id === exerciseId);
     return exercise?.name || 'Unknown Exercise';
@@ -98,24 +93,35 @@ export default function HistoryPage() {
     setSelectedWorkoutId(null);
   };
 
-  const handleDeleteWorkout = async (workoutId: string, event: React.MouseEvent) => {
+  const handleDeleteWorkout = (workoutId: string, event: React.MouseEvent) => {
     event.stopPropagation(); // Prevent opening workout details
-    
-    const confirmed = confirm('Are you sure you want to delete this workout? This action cannot be undone.');
-    if (!confirmed) return;
+    setWorkoutToDelete(workoutId);
+    setShowDeleteConfirm(true);
+  };
+
+  const confirmDeleteWorkout = async () => {
+    if (!workoutToDelete) return;
     
     try {
       const db = await getDB();
-      await db.deleteWorkout(workoutId);
+      await db.deleteWorkout(workoutToDelete);
       
       // Remove from local state
-      setWorkouts(prevWorkouts => prevWorkouts.filter(w => w.id !== workoutId));
+      setWorkouts(prevWorkouts => prevWorkouts.filter(w => w.id !== workoutToDelete));
       
       console.log('Workout deleted successfully');
     } catch (error) {
       console.error('Failed to delete workout:', error);
       alert('Failed to delete workout. Please try again.');
+    } finally {
+      setShowDeleteConfirm(false);
+      setWorkoutToDelete(null);
     }
+  };
+
+  const cancelDeleteWorkout = () => {
+    setShowDeleteConfirm(false);
+    setWorkoutToDelete(null);
   };
 
 
@@ -157,7 +163,6 @@ export default function HistoryPage() {
         <div className="space-y-4">
           {workouts.length > 0 ? (
             workouts.map((workout) => {
-              const volume = getWorkoutVolume(workout);
               const duration = getWorkoutDuration(workout);
               const isCompleted = workout.status === 'completed';
               const isEndedEarly = workout.status === 'ended_early';
@@ -245,6 +250,17 @@ export default function HistoryPage() {
         isOpen={showWorkoutDetails}
         onClose={closeWorkoutDetails}
         workoutId={selectedWorkoutId}
+      />
+
+      {/* Delete Confirmation Modal */}
+      <ConfirmModal
+        isOpen={showDeleteConfirm}
+        onClose={cancelDeleteWorkout}
+        onConfirm={confirmDeleteWorkout}
+        title="Delete Workout"
+        message="Are you sure you want to delete this workout? This action cannot be undone."
+        confirmText="Delete"
+        variant="danger"
       />
     </div>
   );
