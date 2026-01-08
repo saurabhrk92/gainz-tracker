@@ -33,6 +33,9 @@ export default function SetInputForm({ onSubmit, previousSets, barWeight = 45, e
 
   // Load last workout data for this exercise and set number
   useEffect(() => {
+    // Reset initialized flag when exercise or set number changes
+    setIsInitialized(false);
+
     const loadLastWorkoutData = async () => {
       try {
         console.log('Loading last workout data for exerciseId:', exerciseId, 'set number:', previousSets.length + 1);

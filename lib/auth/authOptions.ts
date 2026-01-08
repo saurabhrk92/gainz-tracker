@@ -9,8 +9,8 @@ export const authOptions = {
         params: {
           scope: 'openid email profile https://www.googleapis.com/auth/drive.file',
           access_type: 'offline',
-          // Only prompt for consent if we don't have stored tokens
-          prompt: 'select_account',
+          // Force consent screen to always get refresh token
+          prompt: 'consent',
         }
       }
     }),
