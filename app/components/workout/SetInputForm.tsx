@@ -19,7 +19,6 @@ interface SetInputFormProps {
 export default function SetInputForm({ onSubmit, previousSets, barWeight = 45, exerciseId, exerciseType }: SetInputFormProps) {
   const [reps, setReps] = useState<string>('');
   const [weight, setWeight] = useState<string>('');
-  const [isInitialized, setIsInitialized] = useState<boolean>(false);
   const [lastWorkoutData, setLastWorkoutData] = useState<{ reps: number; weight: number } | null>(null);
   const [plateWeights, setPlateWeights] = useState<{ [key: number]: number }>({
     45: 0,
@@ -33,9 +32,6 @@ export default function SetInputForm({ onSubmit, previousSets, barWeight = 45, e
 
   // Load last workout data for this exercise and set number
   useEffect(() => {
-    // Reset initialized flag when exercise or set number changes
-    setIsInitialized(false);
-
     const loadLastWorkoutData = async () => {
       try {
         console.log('Loading last workout data for exerciseId:', exerciseId, 'set number:', previousSets.length + 1);
@@ -53,11 +49,8 @@ export default function SetInputForm({ onSubmit, previousSets, barWeight = 45, e
             if (lastSet) {
               console.log('Found historical set data:', lastSet);
               setLastWorkoutData({ reps: lastSet.reps, weight: lastSet.weight });
-              if (!isInitialized) {
-                setReps(lastSet.reps.toString());
-                setWeight(lastSet.weight.toString());
-                setIsInitialized(true);
-              }
+              setReps(lastSet.reps.toString());
+              setWeight(lastSet.weight.toString());
               
               // Only calculate plate config for barbell exercises
               if (exerciseType === 'barbell') {
@@ -68,38 +61,12 @@ export default function SetInputForm({ onSubmit, previousSets, barWeight = 45, e
             } else {
               // No historical data for this set number, try to use last set from current session
               setLastWorkoutData(null);
-              if (!isInitialized) {
-                const lastCurrentSet = previousSets[previousSets.length - 1];
-                if (lastCurrentSet) {
-                  console.log('No historical data, using last set from current session:', lastCurrentSet);
-                  setReps(lastCurrentSet.reps.toString());
-                  setWeight(lastCurrentSet.weight.toString());
-                  
-                  // Calculate plate config for barbell exercises
-                  if (exerciseType === 'barbell') {
-                    const targetWeight = lastCurrentSet.weight - barWeight;
-                    const plateConfig = calculatePlateConfig(targetWeight);
-                    setPlateWeights(plateConfig);
-                  }
-                } else {
-                  console.log('No historical data and no previous sets, leaving empty for user input');
-                  setReps('');
-                  setWeight('');
-                  setPlateWeights({ 45: 0, 35: 0, 25: 0, 10: 0, 2.5: 0, 5: 0 });
-                }
-                setIsInitialized(true);
-              }
-            }
-          } else {
-            // Found historical exercise data but no sets
-            setLastWorkoutData(null);
-            if (!isInitialized) {
               const lastCurrentSet = previousSets[previousSets.length - 1];
               if (lastCurrentSet) {
-                console.log('Historical exercise found but no sets, using last set from current session:', lastCurrentSet);
+                console.log('No historical data, using last set from current session:', lastCurrentSet);
                 setReps(lastCurrentSet.reps.toString());
                 setWeight(lastCurrentSet.weight.toString());
-                
+
                 // Calculate plate config for barbell exercises
                 if (exerciseType === 'barbell') {
                   const targetWeight = lastCurrentSet.weight - barWeight;
@@ -107,25 +74,21 @@ export default function SetInputForm({ onSubmit, previousSets, barWeight = 45, e
                   setPlateWeights(plateConfig);
                 }
               } else {
-                console.log('Historical exercise found but no sets and no previous sets, leaving empty for user input');
+                console.log('No historical data and no previous sets, leaving empty for user input');
                 setReps('');
                 setWeight('');
-                setPlateWeights({ 45: 0, 35: 0, 25: 0, 10: 0, 5: 0, 2.5: 0 });
+                setPlateWeights({ 45: 0, 35: 0, 25: 0, 10: 0, 2.5: 0, 5: 0 });
               }
-              setIsInitialized(true);
             }
-          }
-        } else {
-          console.log('No last workout found for exercise:', exerciseId);
-          setLastWorkoutData(null);
-          if (!isInitialized) {
-            // No historical workout data, try to use last set from current session
+          } else {
+            // Found historical exercise data but no sets
+            setLastWorkoutData(null);
             const lastCurrentSet = previousSets[previousSets.length - 1];
             if (lastCurrentSet) {
-              console.log('No historical workout, using last set from current session:', lastCurrentSet);
+              console.log('Historical exercise found but no sets, using last set from current session:', lastCurrentSet);
               setReps(lastCurrentSet.reps.toString());
               setWeight(lastCurrentSet.weight.toString());
-              
+
               // Calculate plate config for barbell exercises
               if (exerciseType === 'barbell') {
                 const targetWeight = lastCurrentSet.weight - barWeight;
@@ -133,12 +96,33 @@ export default function SetInputForm({ onSubmit, previousSets, barWeight = 45, e
                 setPlateWeights(plateConfig);
               }
             } else {
-              console.log('No historical workout and no previous sets, leaving empty for user input');
+              console.log('Historical exercise found but no sets and no previous sets, leaving empty for user input');
               setReps('');
               setWeight('');
               setPlateWeights({ 45: 0, 35: 0, 25: 0, 10: 0, 5: 0, 2.5: 0 });
             }
-            setIsInitialized(true);
+          }
+        } else {
+          console.log('No last workout found for exercise:', exerciseId);
+          setLastWorkoutData(null);
+          // No historical workout data, try to use last set from current session
+          const lastCurrentSet = previousSets[previousSets.length - 1];
+          if (lastCurrentSet) {
+            console.log('No historical workout, using last set from current session:', lastCurrentSet);
+            setReps(lastCurrentSet.reps.toString());
+            setWeight(lastCurrentSet.weight.toString());
+
+            // Calculate plate config for barbell exercises
+            if (exerciseType === 'barbell') {
+              const targetWeight = lastCurrentSet.weight - barWeight;
+              const plateConfig = calculatePlateConfig(targetWeight);
+              setPlateWeights(plateConfig);
+            }
+          } else {
+            console.log('No historical workout and no previous sets, leaving empty for user input');
+            setReps('');
+            setWeight('');
+            setPlateWeights({ 45: 0, 35: 0, 25: 0, 10: 0, 5: 0, 2.5: 0 });
           }
         }
       } catch (error) {
